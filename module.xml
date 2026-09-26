@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+	<Document name="osca-portal.ZPM">
+		<Module>
+			<Name>osca-portal</Name>
+			<Version>0.1.0</Version>
+			<Description>OSCA Portal - a management portal for InterSystems IRIS built on the SysAdmin REST API (%Api.Admin) and %Api.Monitor. Serves a prebuilt single-page app at /portal. Requires IRIS 2026.2 or later.</Description>
+			<Keywords>management portal admin monitoring sysadmin evolution-ui</Keywords>
+			<Packaging>module</Packaging>
+			<SystemRequirements Version=">=2026.2"/>
+
+			<!-- Install-time configuration: OscaPortal.Installer (iris/OscaPortal/Installer.cls). -->
+			<SourcesRoot>iris</SourcesRoot>
+			<Resource Name="OscaPortal.PKG"/>
+
+			<!-- The portal signs in via the Admin API's JWT endpoints and sends a Bearer
+			     token to /api/admin and /api/monitor. 2026.2 ships JWT on for /api/admin
+			     only; this makes sure both apps accept JWT and password login, without
+			     removing any authentication method already allowed. -->
+			<Invoke Class="OscaPortal.Installer" Method="EnableJWT"></Invoke>
+
+			<!--
+			  Front-end: the PREBUILT, committed dist-web/ (built with base /portal/ by
+			  `npm run package` before each publish). Installation never runs Node or
+			  Vite: the build depends on a sibling evolution-ui-2 checkout that judges
+			  and end users do not have.
+
+			  /portal is static files only. The SPA authenticates to the REST APIs
+			  itself (JWT), so its own files are served unauthenticated (AutheEnabled
+			  64). ServeFiles=1 serves without caching, so a re-install is picked up
+			  immediately. WebApplication attributes are Security.Applications
+			  property names, passed through verbatim.
+			-->
+			<FileCopy Name="dist-web/" InstallDirectory="${cspdir}portal/"/>
+			<WebApplication Url="/portal"
+			                Description="OSCA Portal (static single-page app)"
+			                Enabled="1"
+			                AutheEnabled="64"
+			                Path="${cspdir}portal/"
+			                ServeFiles="1"
+			                Recurse="1"/>
+		</Module>
+	</Document>
+</Export>

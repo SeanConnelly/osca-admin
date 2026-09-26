@@ -1,0 +1,9 @@
+    // Container build only. The intersystemsdc images ship _SYSTEM / SYS with an
+    // expiring password; keep the documented defaults usable for evaluation.
+    zn "%SYS"
+    Do ##class(Security.Users).UnExpireUserPasswords("*")
+
+    // Install OSCA Portal (module.xml in this folder) into USER.
+    zn "USER"
+    zpm "load /home/irisowner/dev/ -v":1:1
+    halt

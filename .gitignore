@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+.vite/
+# dist-web/ is committed on purpose: installs (Docker, IPM) use the prebuilt
+# app, so judges never need the sibling evolution-ui-2 checkout to build it.
+
+# Local configuration (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Test output
+test-results/
+playwright-report/
+
+# Editors and OS
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini

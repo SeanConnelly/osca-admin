@@ -1,0 +1,22 @@
+{
+  "name": "osca-portal",
+  "version": "0.1.0",
+  "description": "OSCA Portal — a management portal for InterSystems IRIS, built on the SysAdmin REST API",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json",
+    "package": "npm run typecheck && npm run build"
+  },
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "@evolution-ui/core": "file:../evolution-ui-2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.4.0"
+  }
+}

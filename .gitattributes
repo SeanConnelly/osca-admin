@@ -1,0 +1,5 @@
+# LF everywhere: iris.script and the Dockerfile run inside a Linux container,
+# and CRLF there breaks the IRIS install for anyone cloning on Windows.
+* text=auto eol=lf
+*.jpg binary
+*.png binary

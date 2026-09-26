@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSCA Portal</title>
+    <script>(function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('evolution-ui-theme') || '{}') || {};
+        var d = document.documentElement;
+        if (s.mode) d.setAttribute('data-theme', s.mode);
+        else if (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) d.setAttribute('data-theme', 'dark');
+        else d.setAttribute('data-theme', 'light');
+        if (s.platform && s.platform !== 'neutral') d.setAttribute('data-platform', s.platform);
+      } catch (e) { /* storage unavailable — themed at boot instead */ }
+    })();</script>
+    <style>
+      html, body, #app { height: 100%; margin: 0; }
+      body { background: var(--ev-surface-1); color: var(--ev-text-1); font: 13px system-ui, sans-serif; }
+      ev-shell { height: 100vh; --ev-shell-splitter-color: var(--ev-accent); }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
