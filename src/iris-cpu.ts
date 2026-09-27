@@ -23,12 +23,17 @@ let prev: { at: number; byPid: Map<number, number> } | null = null;
 let latest: IrisCpu | null = null;
 const listeners = new Set<(c: IrisCpu | null, err?: unknown) => void>();
 let timer: ReturnType<typeof setInterval> | null = null;
+/** Failed reads in a row: one blip (a busy or just-started server) is retried quietly, not shown as an error. */
+let failures = 0;
 
 async function poll(): Promise<void> {
   try {
     const procs = await getProcesses();
     const at = performance.now();
     const byPid = new Map(procs.map((p) => [p.Pid, p.CPUTime]));
+    failures = 0;
+    // CPU needs two readings: take the second shortly after the first, not a whole interval later.
+    if (!prev) setTimeout(() => { if (timer) void poll(); }, 2000);
     if (prev) {
       const secs = (at - prev.at) / 1000;
       const last = prev.byPid;
@@ -38,6 +43,8 @@ async function poll(): Promise<void> {
     }
     prev = { at, byPid };
   } catch (err) {
+    failures++;
+    if (failures === 1) { setTimeout(() => { if (timer) void poll(); }, 3000); return; }
     for (const fn of listeners) fn(null, err);
   }
 }
@@ -49,7 +56,7 @@ export const irisCpu = {
     if (!timer) { void poll(); timer = setInterval(() => void poll(), POLL_MS); }
     return () => {
       listeners.delete(fn);
-      if (listeners.size === 0 && timer) { clearInterval(timer); timer = null; prev = null; latest = null; }
+      if (listeners.size === 0 && timer) { clearInterval(timer); timer = null; prev = null; latest = null; failures = 0; }
     };
   },
 };
