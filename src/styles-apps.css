@@ -1,0 +1,47 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Web applications and Tasks screens — only what styles.css has no class for. */
+
+/* A short, toned explanation inside the detail panel or above a workspace. */
+.callout {
+  display: flex; align-items: flex-start; gap: 10px; margin: 4px var(--portal-pad) 12px; padding: 10px 12px;
+  font-size: 12.5px; line-height: 1.45; color: var(--ev-color-text-primary);
+  background: var(--ev-surface-1); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px);
+}
+.callout > ev-icon { flex: 0 0 auto; margin-top: 2px; color: var(--ev-color-info); }
+.callout > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.callout strong { font-weight: 600; }
+.callout span { color: var(--portal-muted); }
+.callout--warning { border-color: color-mix(in srgb, var(--ev-color-warning) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-warning) 8%, var(--ev-surface-2)); }
+.callout--warning > ev-icon { color: var(--ev-color-warning); }
+.callout--danger { border-color: color-mix(in srgb, var(--ev-color-danger) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-danger) 8%, var(--ev-surface-2)); }
+.callout--danger > ev-icon { color: var(--ev-color-danger); }
+/* Page-level banner: sits in the page flow, not inside a panel. */
+.callout--banner { flex: 0 0 auto; margin: 0; }
+
+.detail-desc { margin: 0 var(--portal-pad) 10px; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); overflow-wrap: anywhere; }
+/* Values that are lists (chips, roles, e-mail addresses) wrap instead of truncating. */
+.kv dd.kv-wrap { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.chips { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.detail-actions .link { display: inline-flex; align-items: center; gap: 5px; height: 26px; margin: 0; padding: 0 8px; text-decoration: none; }
+.link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.pre-block {
+  margin: 6px var(--portal-pad) 0; padding: 8px 10px; font: 12px/1.5 var(--ev-font-family-mono, monospace);
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ev-color-text-primary);
+  background: var(--ev-surface-inset, var(--ev-neutral-2)); border-radius: var(--ev-radius-sm, 4px);
+}
+/* A summary chip that is also a toggle filter (web apps: "N allow unauthenticated access"). */
+.chip-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 2px; font: inherit; color: var(--ev-color-warning); background: none; border: 1px solid transparent; border-radius: 999px; cursor: pointer; }
+.chip-toggle:hover { border-color: var(--ev-border-2); }
+.chip-toggle[aria-pressed="true"] { border-color: var(--ev-color-warning); padding-right: 6px; }
+.chip-toggle:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.detail-subtitle { margin: 3px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--portal-muted); }
+.detail-actions--nowrap { flex-wrap: nowrap; }
+.detail-state .detail-state-link { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 0 auto; text-decoration: none; }
+.detail-row-actions { display: flex; justify-content: flex-end; margin: 6px var(--portal-pad) 0; }
+/* A link inside running text (callouts): no pill padding, same size as the sentence. */
+.link.link--inline { display: inline; margin: 0; padding: 0; font-size: inherit; vertical-align: baseline; }
+/* One-line callout in a detail panel, after the key/value rows: headline only, explanation in the tooltip. */
+/* It stays inside the panel's padding: the box can shrink, and the line wraps (rather than clipping) when the panel is narrow. */
+.callout.callout--one { min-width: 0; max-width: 100%; box-sizing: border-box; margin: 8px var(--portal-pad); padding: 8px 12px; }
+.callout.callout--one > div { display: block; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.callout.callout--one > div > span { display: inline; }

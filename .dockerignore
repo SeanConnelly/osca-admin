@@ -1,7 +1,7 @@
 # The image only needs module.xml, iris/, iris.script and the prebuilt dist-web/.
 node_modules
 src
-design
+docs
 skills
 tests
 test-results

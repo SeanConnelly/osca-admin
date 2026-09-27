@@ -1,6 +1,7 @@
 # Dependencies and build output
 node_modules/
 .vite/
+*.tsbuildinfo
 # dist-web/ is committed on purpose: installs (Docker, IPM) use the prebuilt
 # app, so judges never need the sibling evolution-ui-2 checkout to build it.
 
@@ -20,3 +21,6 @@ playwright-report/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local assistant skill docs (not part of the portal)
+skills/

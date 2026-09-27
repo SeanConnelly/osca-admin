@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+	<Document name="osca-portal-showcase.ZPM">
+		<Module>
+			<Name>osca-portal-showcase</Name>
+			<Version>0.1.0</Version>
+			<Description>OPTIONAL. Sample objects for demonstrating OSCA Admin on a FRESH IRIS install only. Adds the /api/osca-showcase REST application. Nothing is created at install: the portal's Showcase page creates the osca_demo_ objects only after every fresh-install check passes and the user types a confirmation phrase. Do not install on a real server.</Description>
+			<Keywords>osca-portal demo showcase sample-data</Keywords>
+			<Packaging>module</Packaging>
+			<SystemRequirements Version=">=2026.2"/>
+
+			<Dependencies>
+				<ModuleReference>
+					<Name>osca-portal</Name>
+					<Version>0.1.0</Version>
+				</ModuleReference>
+			</Dependencies>
+
+			<!-- Separate from the main module: its sources live in iris-showcase/, never in iris/,
+			     and module.xml does not reference this module. -->
+			<SourcesRoot>iris-showcase</SourcesRoot>
+			<Resource Name="OscaShowcase.PKG"/>
+
+			<Invoke Class="OscaShowcase.Installer" Method="CreateApp">
+				<Arg>${namespace}</Arg>
+			</Invoke>
+			<!-- On uninstall, remove the web application (only if it is this module's). -->
+			<Invoke Class="OscaShowcase.Installer" Method="RemoveApp" Phase="Unconfigure" When="Before"></Invoke>
+		</Module>
+	</Document>
+</Export>

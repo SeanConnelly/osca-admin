@@ -1,0 +1,93 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Tasks › Schedule, Settings › License, Settings › Work queue categories — only what the shared sheets have no class for. */
+
+/* Main area that isn't a grid: its own scroller. */
+.set-main { position: relative; height: 100%; overflow: auto; }
+.set-main > .empty-std { position: static; }
+
+/* Detail panel: settings and what each one means. */
+.set-gap { margin-top: 10px; }
+
+/* Summary strip with four cells (the three-cell strip lives in styles-disk.css). */
+.jrn-cells.set-cells4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (min-width: 901px) and (max-width: 1000px) { .jrn-cells.set-cells4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* License: key cards, file picker. */
+.set-page { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; padding: 12px; align-items: start; }
+.set-card { min-width: 0; padding-bottom: 12px; background: var(--ev-surface-1); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); }
+.set-card .kv dd .mono { font-size: 11.5px; }
+.set-chips { padding: 2px var(--portal-pad) 6px; }
+.set-card-actions { display: flex; gap: 8px; padding: 10px var(--portal-pad) 0; }
+.set-card-actions a.btn { text-decoration: none; }
+.set-file { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px; color: var(--ev-color-primary); cursor: pointer; }
+.set-file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.set-file span { text-decoration: underline; text-underline-offset: 2px; }
+.set-file:focus-within span { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; border-radius: 2px; }
+
+/* Header: secondary buttons side by side. */
+.set-head { display: inline-flex; align-items: center; gap: 8px; }
+.set-head a.btn { text-decoration: none; }
+
+/* Schedule: shared bits. */
+.sch-main { display: flex; flex-direction: column; }
+/* The timetable is the card and the "18 tasks" footer sits in its column, so opening the peek (taller
+   than a short timetable) never pushes the footer down; the panel itself draws no card. */
+.workspace.sch-ws { background: none; border-color: transparent; border-radius: 0; }
+.sch-col { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+.workspace.sch-ws[open]:not([data-overlay]) > .sch-col:not([slot]) { background: none; border: 0; border-radius: 0; }
+.sch-col > .sch-main { flex: 0 1 auto; height: auto; min-height: 0; background: var(--ev-surface-2); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-lg, 8px); }
+.sch-col > .sch-main:has(> .empty-std) { background: none; border-color: transparent; }
+.sch-task { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; padding: 0; font: inherit; font-size: 12.5px; text-align: left; color: var(--ev-color-text-primary); background: none; border: 0; cursor: pointer; }
+.sch-task:hover .sch-task-name { text-decoration: underline; text-underline-offset: 2px; }
+.sch-task:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; border-radius: 2px; }
+.sch-task-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.sch-task ev-chip { flex: 0 0 auto; white-space: nowrap; } /* the pill never shrinks; the name truncates */
+.sch-sel { background: var(--ev-state-selected-bg); }
+
+/* Schedule: week grid. Fixed column widths, so nothing moves as times change. */
+/* One scroller: .set-main scrolls both ways; the table itself never scrolls. */
+.sch-scroll { padding: 0 0 4px; }
+.sch-week { width: 100%; min-width: 820px; border-collapse: collapse; table-layout: fixed; font-size: 12.5px; }
+.sch-week th, .sch-week td { padding: 7px 10px; border-bottom: 1px solid var(--ev-border-1); text-align: left; vertical-align: middle; }
+.sch-week thead th { position: sticky; top: 0; z-index: 1; background: var(--ev-surface-2); font-weight: 600; font-size: 12px; color: var(--portal-muted); }
+.sch-week thead th span { display: block; color: var(--ev-color-text-primary); }
+.sch-week thead th small { display: block; font-weight: 400; font-size: 11.5px; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.sch-week .sch-col-task { width: 270px; }
+.sch-week tbody th { font-weight: 400; }
+.sch-week tbody tr:hover { background: var(--ev-state-hover-bg); }
+.sch-week tbody tr.sch-sel { background: var(--ev-state-selected-bg); }
+.sch-times { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--ev-font-family-mono); font-size: 11.5px; color: var(--ev-color-text-primary); font-variant-numeric: tabular-nums; }
+.sch-times b { font-family: var(--ev-font-family); font-weight: 600; font-size: 12px; }
+.sch-times--off { color: var(--portal-muted); text-decoration: line-through; text-decoration-color: var(--ev-border-2); }
+/* Suspended tasks: one dimmed cell, no times. */
+.sch-week .sch-susp-text { color: var(--ev-color-text-tertiary); }
+.sch-legend { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--portal-muted); }
+
+
+/* Schedule: day timeline. */
+.sch-day { display: flex; flex-direction: column; padding: 0 0 8px; min-width: 640px; }
+.sch-day-row { display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: center; gap: 12px; padding: 5px 12px; border-bottom: 1px solid var(--ev-border-1); }
+.sch-day-row:hover { background: var(--ev-state-hover-bg); }
+.sch-day-head { position: sticky; top: 0; z-index: 1; padding-top: 8px; padding-bottom: 8px; background: var(--ev-surface-2); font-size: 12px; font-weight: 600; color: var(--portal-muted); }
+.sch-day-head:hover { background: var(--ev-surface-2); }
+.sch-axis { position: relative; height: 16px; }
+.sch-axis span { position: absolute; top: 0; transform: translateX(-2px); font-weight: 400; font-size: 11px; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.sch-track {
+  position: relative; height: 22px; border-radius: var(--ev-radius-sm, 4px);
+  background: repeating-linear-gradient(to right, var(--ev-border-1) 0 1px, transparent 1px calc(100% / 8)), var(--ev-surface-1);
+}
+.sch-mark { position: absolute; top: 4px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--ev-color-primary); }
+.sch-band { position: absolute; top: 7px; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--ev-color-primary) 55%, transparent); }
+.sch-track--off .sch-mark, .sch-track--off .sch-band { background: var(--ev-border-2); }
+.sch-now { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ev-color-danger); }
+.sch-track-label { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--portal-muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+
+/* Schedule editor. */
+.sch-days { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.sch-days .crud-check { margin: 0; }
+/* In the sections' gutter, not flush with the card edge. */
+.sch-preview { margin: 4px var(--portal-pad) 8px; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); }
+.sch-preview:empty { display: none; }
+/* What changes: now and after saving, inside the section's gutter like the fields. */
+.sch-change { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ev-color-text-primary); }
+.sch-change.sch-preview { color: var(--portal-muted); }

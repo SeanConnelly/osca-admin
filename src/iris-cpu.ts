@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * IRIS's own CPU use, measured from per-process CPU time between polls.
  * Shared so every screen states the same figure the same way:

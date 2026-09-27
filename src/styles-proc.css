@@ -1,0 +1,101 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Operations › Processes: what the shared peek / full view (objectDetail, styles.css .od-*) doesn't cover:
+   the live Activity rows, the key/value values that wrap (roles, locks, devices), and Variables. Tokens only. */
+
+.proc-list-view { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; }
+
+/* One-line notice at the top of the peek body or under the full-view strip: why an action is missing, or "Ended". */
+.pd-notice { margin: 12px var(--portal-pad) 0; font-size: 12.5px; color: var(--ev-color-text-secondary); }
+.pf-note { margin: 0; font-size: 12.5px; color: var(--ev-color-text-secondary); }
+.pd-frame--ended > :not(.pd-notice) { opacity: 0.55; }
+
+/* ── Key/value values that don't fit one line ───────────────────────── */
+#proc-detail .od-kv-row dd:has(.pd-chips, .pd-locks, .pd-devs),
+#proc-full .od-kv-row dd:has(.pd-chips, .pd-locks, .pd-devs) { white-space: normal; overflow: visible; }
+.od-kv-row.kv--stack { flex-direction: column; align-items: stretch; gap: 2px; padding-top: 4px; padding-bottom: 4px; }
+.od-kv-row.kv--stack dd { display: flex; align-items: flex-start; gap: 4px; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+/* Line and Last global: one mono line with an ellipsis (the whole value is the title); copy follows the value. */
+.pd-ell { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.pd-copy-host dd { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.pf-where { padding-bottom: 4px; border-bottom: 1px solid var(--ev-border-1); }
+.pf-where .od-kv-row dd { flex: 1 1 auto; display: flex; justify-content: flex-end; }
+.pd-chips { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.pd-chip-link { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; border-radius: var(--ev-radius-full, 999px); }
+.pd-chip-link:focus-visible, .pd-pid:focus-visible, .pd-lockname:focus-visible, .pd-eye:focus-visible, .pd-copy:focus-visible { outline: 2px solid var(--ev-color-primary); outline-offset: 1px; }
+.pd-pid { font-variant-numeric: tabular-nums; }
+.pd-tag { margin-left: 6px; padding: 0 5px; font-size: 11px; line-height: 16px; color: var(--portal-muted); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-sm, 4px); white-space: nowrap; }
+.pd-locks { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; max-width: 100%; }
+.pd-lock { display: flex; align-items: baseline; justify-content: flex-start; gap: 6px; max-width: 100%; }
+.pd-lockname { min-width: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.pd-devs { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.pd-dev { display: inline-flex; align-items: center; }
+
+/* Copy buttons: inline right after the value, hidden (but holding their space, so nothing shifts)
+   until the row is hovered or the button has keyboard focus; always shown for a revealed variable. */
+.pd-copy { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: var(--ev-radius-sm, 4px); background: none; color: var(--portal-muted); cursor: pointer; visibility: hidden; }
+.pd-copy-host:hover .pd-copy, .pd-copy-host:focus-within .pd-copy, .pd-copy:focus-visible, .pd-copy--always { visibility: visible; }
+.pd-copy:hover { color: var(--ev-color-text-primary); background: var(--ev-surface-1); }
+
+/* ── Activity: label | sparkline (ui.ts sparkline()) | value ─────────── */
+.pd-rates { display: grid; padding: 4px 0 0; }
+.pd-rate { display: grid; grid-template-columns: minmax(0, 1fr) minmax(96px, 160px) 64px; align-items: center; gap: 12px; min-height: 28px; padding: 0 var(--portal-pad); font-size: 12.5px; }
+.pd-rate-label { color: var(--portal-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-rate-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--ev-color-text-primary); white-space: nowrap; }
+.pd-trend { height: 20px; }
+/* Full view: label 140px | spark (all the rest) | value with the peak under it, on one shared grid. */
+.od-full .pd-rates { grid-template-columns: 140px minmax(0, 1fr) auto; column-gap: 16px; padding-top: 8px; }
+.pd-rate--full { grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 16px; min-height: 40px; }
+.pd-rate--full .pd-trend { height: 28px; }
+/* Value, then the peak under it: the peak hangs below without moving the value off its label's line. */
+.pd-rate-cell { position: relative; display: grid; justify-items: end; min-width: 88px; white-space: nowrap; }
+.pd-rate-cell .pd-rate-peak { position: absolute; top: 100%; right: 0; min-height: 0; }
+.pd-rate-cell .pd-rate-value { display: block; }
+.pd-rate-peak { display: block; min-height: 14px; font-size: 11px; line-height: 14px; color: var(--portal-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Totals (not rates): short figures that wrap rather than clip; exact figures in the title. */
+.pd-totals { margin: 6px var(--portal-pad) 0; padding: 8px 0 4px; border-top: 1px solid var(--ev-border-1); font-size: 12px; color: var(--portal-muted); font-variant-numeric: tabular-nums; white-space: normal; overflow-wrap: anywhere; }
+
+/* ── Variables ───────────────────────────────────────────────────────── */
+.pd-vars > summary { cursor: pointer; list-style: revert; }
+.pd-vars > summary:focus-visible { outline: 2px solid var(--ev-color-primary); outline-offset: 1px; }
+.pd-var-tools { display: flex; align-items: center; gap: 8px; padding: 8px var(--portal-pad); }
+.pd-var-tools ev-search { flex: 1 1 auto; min-width: 0; }
+.od-full .pd-var-tools ev-search { flex: 0 1 320px; }
+.od-full .pd-var-tools [data-pd="var-all"] { margin-left: auto; }
+.pd-var-empty { padding: 8px var(--portal-pad); font-size: 12px; }
+.pd-var-name { display: flex; align-items: center; min-width: 0; }
+.pd-var-name .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-var-cell { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.pd-var-value { flex: 1 1 auto; min-width: 0; color: var(--ev-color-text-primary); }
+.pd-var-mask { color: var(--portal-faint); letter-spacing: 1px; }
+.pd-eye, .pd-eye-gap { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; padding: 0; border: 0; border-radius: var(--ev-radius-sm, 4px); background: none; color: var(--portal-muted); cursor: pointer; }
+.pd-eye:hover { color: var(--ev-color-text-primary); background: var(--ev-surface-1); }
+/* Variables as a tree: 16px chevron column | name | value; 24px indent per level; 28px rows. */
+.pd-vrow {
+  display: grid; grid-template-columns: 16px minmax(0, 2fr) minmax(0, 3fr); align-items: center; column-gap: 8px;
+  min-height: 28px; padding: 0 var(--portal-pad) 0 calc(var(--portal-pad) + var(--lvl, 0) * 24px);
+  font-size: 12px; border-top: 1px solid var(--ev-border-1);
+}
+.pd-vrow--full { grid-template-columns: 16px minmax(180px, 28%) minmax(0, 1fr); font-size: 12.5px; }
+.pd-vrow:focus-visible { outline: 2px solid var(--ev-color-primary); outline-offset: -2px; }
+.pd-vrow--note { border-top: 0; min-height: 24px; }
+.pd-vchev-col { display: flex; align-items: center; justify-content: center; width: 16px; }
+.pd-vchev { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: var(--ev-radius-sm, 4px); background: none; color: var(--ev-color-text-tertiary); cursor: pointer; }
+.pd-vchev:hover { color: var(--ev-color-text-primary); background: var(--ev-surface-1); }
+.pd-vrow .pd-var-cell { align-items: center; }
+.pd-vrow .pd-var-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Full view: a revealed value wraps in mono. */
+.pd-vrow--full .pd-var-cell { align-items: flex-start; padding: 4px 0; }
+.pd-vrow--full .pd-var-value { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 20px; }
+.pd-vcount { flex: none; margin-left: 8px; font-size: 11.5px; color: var(--ev-color-text-tertiary); white-space: nowrap; }
+.pd-vtype { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--ev-color-text-tertiary); }
+.pd-vcaption { font-size: 11.5px; color: var(--ev-color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-vrow--note .pd-var-name { grid-column: 2 / -1; }
+.pf-vars { font-size: 12.5px; }
+.pf-var--head { min-height: 0; padding-top: 6px; padding-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--portal-muted); border-top: 0; }
+
+/* ── Full view layout: Activity beside Runs as + Holds, both ending on one line; Variables full width below ── */
+.od-cols.pf-cols { align-items: stretch; }
+.pf-cols > .od-col:first-child > .od-card:only-child { flex: 1 1 auto; display: flex; flex-direction: column; }
+.pf-cols > .od-col:first-child > .od-card:only-child > .od-card-body { flex: 1 1 auto; display: flex; flex-direction: column; }
+.pf-cols .pd-totals { margin-top: auto; }
+.pd-vrow--note .pd-var-cell { display: none; }

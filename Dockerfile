@@ -1,4 +1,4 @@
-# OSCA Portal on InterSystems IRIS for Health Community.
+# OSCA Admin on InterSystems IRIS for Health Community.
 #
 # Pinned to 2026.2: the SysAdmin REST API (%Api.Admin) the portal is built on
 # first ships in 2026.2, and intersystemsdc/*:latest currently points at 2026.1.

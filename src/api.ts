@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Thin client for IRIS's SysAdmin REST API (%Api.Admin, /api/admin/v2/...).
  * Requests go same-origin (the Vite proxy in dev, IRIS itself in production)
  * and carry the signed-in user's JWT via authFetch (src/auth.ts).
  */
 import { authFetch } from './auth';
+import { readEnvelope, sendAdmin } from './crud';
 
 const BASE = '/api/admin/v2';
 
@@ -12,12 +14,24 @@ interface Envelope<T> {
   result: T;
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await authFetch(`${BASE}${path}`, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`Admin API ${path} → HTTP ${res.status} ${res.statusText}`);
-  const json = (await res.json()) as Envelope<T>;
-  if (json.status?.errors?.length) throw new Error(json.status.errors[0]?.error || json.status.summary || 'Admin API error');
-  return json.result;
+/**
+ * Errors: the envelope is read even when the status isn't 2xx (IRIS puts the
+ * real reason there, often under a plain HTTP 500), and failures throw an
+ * AdminError (src/crud.ts) carrying a clean, user-facing message and the status.
+ */
+export async function get<T>(path: string): Promise<T> {
+  const res = await sendAdmin(`${BASE}${path}`, { headers: { Accept: 'application/json' } });
+  return readEnvelope<T>(res);
+}
+
+/** POST for read-only searches that take a JSON body (e.g. /security/audit/records). */
+export async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await sendAdmin(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return readEnvelope<T>(res);
 }
 
 export interface AdminInfo {
@@ -60,20 +74,6 @@ export interface Dashboard {
 }
 export const getDashboard = (): Promise<Dashboard> => get('/monitor/dashboard/main');
 
-export interface User {
-  Name: string;
-  FullName: string;
-  Type: string;
-  Enabled: boolean;
-}
-
-export interface WebApp {
-  Name: string;
-  DispatchClass: string;
-  Namespace: string;
-  Enabled: boolean;
-}
-
 export interface UpcomingTask {
   Id: number;
   Name: string;
@@ -91,8 +91,6 @@ export function getInfo(): Promise<AdminInfo> {
     .then((json) => json.result);
 }
 export const getProcesses = (): Promise<Process[]> => get('/processes');
-export const getUsers = (): Promise<User[]> => get('/security/users');
-export const getWebApps = (): Promise<WebApp[]> => get('/web-apps');
 export const getUpcomingTasks = (): Promise<UpcomingTask[]> => get('/task/upcoming');
 export const getNamespaces = (): Promise<Namespace[]> => get('/namespaces');
 

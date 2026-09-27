@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * System alerts from %Api.Monitor (/api/monitor/alerts). The endpoint hands
  * each alert out once, so the portal keeps every alert it has seen (per

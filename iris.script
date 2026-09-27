@@ -3,7 +3,10 @@
     zn "%SYS"
     Do ##class(Security.Users).UnExpireUserPasswords("*")
 
-    // Install OSCA Portal (module.xml in this folder) into USER.
+    // Install OSCA Admin (module.xml in this folder) into USER.
     zn "USER"
     zpm "load /home/irisowner/dev/ -v":1:1
+
+    // Docker maps the container's web port 52773 to 52780 on the host (docker-compose.yml).
+    Write !!,"OSCA Admin: open http://localhost:52780/portal/index.html and sign in as _SYSTEM / SYS",!
     halt

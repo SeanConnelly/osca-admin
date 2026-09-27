@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- OSCA Admin: the OSCA suite tile with a status ring (an O with one amber segment). 16-pixel grid. -->
+  <rect width="16" height="16" rx="3.5" fill="#2f6bf0"/>
+  <circle cx="8" cy="8" r="4.4" fill="none" stroke="#ffffff" stroke-width="2.6"/>
+  <path d="M8 3.6a4.4 4.4 0 0 1 4.2 3.1" fill="none" stroke="#f5a524" stroke-width="2.6"/>
+</svg>

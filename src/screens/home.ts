@@ -1,242 +1,297 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
- * Home — "is this instance OK, and is anything about to need me?"
- * The instance is the page title; five headline figures; then what needs
- * attention, what runs next, who is busiest and how full the disks are.
+ * Home — the triage page: "is this instance OK, and is anything about to need me?"
+ * The instance is the page title; five headline figures; then, side by side at
+ * equal natural height, what needs attention (the shared issues model,
+ * ranked) and what runs next. Below the fold: the busiest processes and the
+ * instance's own figures.
  */
-import { metrics, value, samples, systemState, trendOf, type Snapshot } from '../metrics';
+import '../styles-ops.css';
+import '../styles-disk.css';
+import { metrics, value, samples, type Snapshot } from '../metrics';
 import { alerts } from '../alerts';
-import { getUpcomingTasks, getDashboard, type UpcomingTask, type Dashboard } from '../api';
+import { getUpcomingTasks, type UpcomingTask, type Dashboard } from '../api';
+import { linkTo } from '../api-security';
+import { apiAvailable, fsRoots, type FsRoot } from '../api-osca';
 import { irisCpu, irisCaption, type IrisCpu } from '../iris-cpu';
-import { esc, pct, compact, mb, relative, irisDate, chip, skeleton, errorPanel, liveIndicator, statTile, setStat, middle, type ScreenCtx, type Tone } from '../ui';
-
-interface Attention { tone: Tone; title: string; detail: string; action?: { label: string; go?: string; copy?: string } }
+import { buildIssues, issueSources, type Issue, type IssueFacts } from '../issues';
+import { esc, pct, compact, mb, irisDate, future, skeleton, errorPanel, liveIndicator, statTile, setStat, middle, type ScreenCtx, type Tone } from '../ui';
 
 const band = (v: number, warn: number, danger: number): Tone => (v >= danger ? 'danger' : v >= warn ? 'warning' : 'success');
+const MAX_ISSUES = 5;
+const MAX_RUNS = 6;
+
 
 export function homeScreen(ctx: ScreenCtx): void {
   ctx.body.innerHTML = `
-    <section class="stats stats--5">
+    <section class="stats stats--5 home-stats">
       ${statTile('cpu', 'System CPU', 'trend')}
       ${statTile('mem', 'Memory', 'bar')}
       ${statTile('disk', 'Disk', 'bar')}
-      ${statTile('procs', 'Processes', 'trend')}
+      ${statTile('procs', 'Processes', 'plain')}
       ${statTile('lic', 'License units', 'bar')}
     </section>
-    <div class="columns">
-      <div class="column column--wide">
-        <section class="card">
-          <header class="card-head"><h2>Needs attention</h2><span class="card-hint" id="attention-count"></span></header>
-          <div id="attention">${skeleton(3)}</div>
-        </section>
-        <section class="card">
-          <header class="card-head"><h2>Busiest right now</h2><button type="button" class="link" data-go="operations/processes">All processes</button></header>
-          <div id="busiest">${skeleton(5)}</div>
-        </section>
-      </div>
-      <div class="column">
-        <section class="card">
-          <header class="card-head"><h2>Coming up</h2><button type="button" class="link" data-go="tasks/upcoming">All tasks</button></header>
-          <div id="upcoming">${skeleton(5)}</div>
-        </section>
-        <section class="card">
-          <header class="card-head"><h2>Storage</h2><button type="button" class="link" data-go="databases/capacity">Capacity</button></header>
-          <div id="storage">${skeleton(3)}</div>
-        </section>
-      </div>
+    <div class="home-triage" id="home-triage">
+      <section class="card home-card" id="attention-card">
+        <header class="card-head"><h2>Needs attention</h2><span class="card-hint" id="attention-count"></span></header>
+        <div class="home-card-body" id="attention">${skeleton(4)}</div>
+        <footer class="home-foot" id="attention-foot"></footer>
+      </section>
+      <section class="card home-card">
+        <header class="card-head"><h2>Coming up</h2></header>
+        <div class="home-card-body" id="upcoming">${skeleton(5)}</div>
+        <footer class="home-foot"><button type="button" class="link" data-go="tasks/schedule">Schedule</button></footer>
+      </section>
+    </div>
+    <div class="home-below" id="home-below">
+      <section class="card" id="top-card" hidden>
+        <header class="card-head"><h2>Top processes</h2><button type="button" class="link" data-go="operations/processes">All processes</button></header>
+        <div id="busiest"></div>
+      </section>
+      <section class="card" id="inst-card">
+        <header class="card-head"><h2>This instance</h2></header>
+        <div id="inst">${skeleton(3)}</div>
+      </section>
     </div>`;
   const wireLinks = (root: ParentNode): void =>
     root.querySelectorAll<HTMLElement>('[data-go]').forEach((b) => b.addEventListener('click', () => ctx.navigate(b.dataset.go ?? '')));
   wireLinks(ctx.body);
-
-  let snap: Snapshot | null = null;
-  let dash: Dashboard | null = null;
-  let alertCount = 0;
-  const updated = liveIndicator(ctx, () => { void metrics.refresh(); void loadSlow(); });
   const $ = (id: string): HTMLElement => ctx.body.querySelector(`#${id}`) as HTMLElement;
 
+  const facts: IssueFacts = {};
+  let expanded = false;
+  const updated = liveIndicator(ctx, () => { void metrics.refresh(); void loadSlow(true); });
+
   const renderHeading = (): void => {
+    const snap = facts.snap;
     if (!snap) return;
     const info = samples(snap, 'iris_system_info')[0]?.labels ?? {};
-    const state = systemState(value(snap, 'iris_system_state'));
     const mirror = value(snap, 'iris_mirror_member_type');
     const mirrorText = mirror === 2 ? 'Not mirrored' : mirror === 3 ? 'Mirror failover member' : mirror === 4 ? 'Mirror async member' : '';
-    const why = state.tone === 'success' ? 'IRIS reports no problems' : 'IRIS has flagged its own health — see Needs attention';
+    const dash = facts.dash;
     const meta = [
       `${esc(info.product ?? 'InterSystems IRIS')} ${esc(info.version ?? '')}${info.build_number ? ` · build ${esc(info.build_number)}` : ''}`,
       esc(info.platform ?? ''),
       dash ? `Up ${esc(dash.Status.UpTime.replace(/^0d /, ''))}` : '',
       mirrorText,
     ].filter(Boolean).join('<span class="meta-sep">·</span>');
-    ctx.heading(`${esc(info.id ?? 'IRIS instance')} ${chip(state.label, state.tone, why)}`, meta);
+    // No health pill by the name: the status bar and Needs attention carry it.
+    ctx.heading(esc(info.id ?? 'IRIS instance'), meta);
   };
 
+  let irisCore: number | null = null; // IRIS processes together, % of one core
+  let irisIdle = false;
+  let busyCount: number | null = null; // IRIS processes using at least 1% of one core
+  let split: { user: number; system: number } | null = null; // from the process list
+  /** The server's drives with their size (OSCA API), for drives the metrics feed doesn't cover; [] without it. */
+  let roots: FsRoot[] = [];
+  // Disk tile: Capacity's 85%/95% marks on its bar (no labels), and it opens Capacity.
+  {
+    const tile = ctx.body.querySelector<HTMLElement>('[data-stat="disk"]');
+    const bar = tile?.querySelector<HTMLElement>('.stat-bar');
+    if (tile && bar) {
+      bar.classList.add('has-ticks');
+      bar.insertAdjacentHTML('beforeend', '<i class="disk-tick" style="left:85%"></i><i class="disk-tick disk-tick--crit" style="left:95%"></i>');
+      tile.classList.add('stat--link');
+      tile.setAttribute('role', 'link');
+      tile.tabIndex = 0;
+      const open = (): void => ctx.navigate('databases/capacity');
+      tile.addEventListener('click', open);
+      tile.addEventListener('keydown', (e) => { if (e.key === 'Enter') open(); });
+    }
+  }
   const renderStats = (): void => {
+    const snap = facts.snap;
     if (!snap) return;
     const cpu = value(snap, 'iris_cpu_usage');
     const mem = value(snap, 'iris_phys_mem_percent_used');
-    const disks = samples(snap, 'iris_disk_percent_full');
-    const worst = disks.reduce((a, b) => (b.value > a.value ? b : a), disks[0] ?? { value: NaN, labels: {} });
-    const volume = /^([a-z]:)/i.exec(worst.labels.dir ?? '')?.[1]?.toUpperCase() ?? 'Volume';
-    const free = value(snap, 'iris_directory_space', { id: worst.labels.id ?? '' });
+    // Every drive: the metrics feed's (databases, journals), plus the server's drive list for the rest,
+    // the same sources as Capacity. The tile shows the fullest; the tooltip lists them all.
+    const drives = new Map<string, { pct: number; free: number; role: string }>();
+    const letter = (dir: string): string => /^([a-z]:)/i.exec(dir)?.[1]?.toUpperCase() ?? dir;
+    const roleOf = (key: string): string => (roots.find((r) => letter(r.path) === key) as (FsRoot & { role?: string }) | undefined)?.role ?? '';
+    for (const d of samples(snap, 'iris_disk_percent_full')) {
+      const key = letter(d.labels.dir ?? '');
+      const prev = drives.get(key);
+      if (prev && prev.pct >= d.value) continue;
+      drives.set(key, { pct: d.value, free: value(snap, 'iris_directory_space', { id: d.labels.id ?? '' }), role: roleOf(key) });
+    }
+    for (const r of roots) {
+      const key = letter(r.path);
+      if (drives.has(key) || !r.totalBytes || r.path === '/' || r.type === 'allowed') continue;
+      const free = (r.freeBytes ?? NaN) / 1048576;
+      drives.set(key, { pct: (1 - (r.freeBytes ?? NaN) / r.totalBytes) * 100, free, role: roleOf(key) });
+    }
+    const list = [...drives.entries()];
+    const top = list.reduce<[string, { pct: number; free: number; role: string }] | null>((a, b) => (!a || b[1].pct > a[1].pct ? b : a), null);
+    const worst = { value: top ? top[1].pct : NaN };
+    const volume = top && /^[A-Z]:$/.test(top[0]) ? top[0] : 'Volume';
+    const free = top ? top[1].free : NaN;
     const procs = value(snap, 'iris_process_count');
     const used = value(snap, 'iris_license_consumed');
     const total = used + value(snap, 'iris_license_available');
     const licPct = value(snap, 'iris_license_percent_used');
-    // System CPU is the whole machine; IRIS is the sum of its processes, per core.
-    setStat(ctx.body, 'cpu', { value: pct(cpu), caption: irisCaption(irisCore), tone: band(cpu, 70, 90), trend: trendOf(snap, 'iris_cpu_usage'),
+    setStat(ctx.body, 'cpu', { value: pct(cpu), caption: irisCaption(irisCore), tone: band(cpu, 70, 90), trend: metrics.history('iris_cpu_usage').values,
       title: 'System CPU covers everything on this machine. The IRIS figure adds up CPU used by IRIS processes over the last few seconds, measured against one core.' });
     setStat(ctx.body, 'mem', { value: pct(mem), caption: 'of RAM', tone: band(mem, 80, 92), fill: mem });
-    setStat(ctx.body, 'disk', { value: pct(worst.value), caption: `${volume} · ${mb(free)} free`, tone: band(worst.value, 85, 95), fill: worst.value });
-    setStat(ctx.body, 'procs', { value: compact(procs), caption: 'active', trend: trendOf(snap, 'iris_process_count') });
+    setStat(ctx.body, 'disk', {
+      value: pct(worst.value),
+      caption: list.length > 1 ? `${volume} · fullest of ${list.length}` : `${volume} · ${mb(free)} free`,
+      tone: band(worst.value, 85, 95), fill: worst.value,
+      title: list.map(([k, d]) => `${k}${d.role ? ` ${d.role}` : ''} ${pct(d.pct)} · ${mb(d.free)} free`).join('\n'),
+    });
+    // A count isn't a rate: no trend line, just who the processes belong to.
+    setStat(ctx.body, 'procs', { value: compact(procs), caption: split ? `${split.user} user · ${split.system} system` : '',
+      title: busyCount === null ? '' : busyCount ? `${busyCount} using at least 1% of one CPU core` : 'All idle: every IRIS process is under 1% of one core' });
     setStat(ctx.body, 'lic', { value: Number.isFinite(total) ? `${used} of ${total}` : '—', caption: 'in use', tone: band(licPct, 80, 95), fill: licPct });
   };
 
-  const renderAttention = (): void => {
-    if (!snap) return;
-    const items: Attention[] = [];
-    const s = systemState(value(snap, 'iris_system_state'));
-    if (s.tone !== 'success' && s.tone !== 'neutral') {
-      items.push({ tone: s.tone === 'warning' ? 'warning' : 'danger', title: `IRIS reports a ${s.label.toLowerCase()} state`,
-        detail: alertCount > 0 ? `${alertCount} alert${alertCount === 1 ? ' is' : 's are'} recorded since startup.` : 'The instance has flagged its own overall health.',
-        action: { label: 'View alerts', go: 'logs/alerts' } });
-    }
-    const volumes = new Set<string>();
-    for (const d of samples(snap, 'iris_disk_percent_full')) {
-      const vol = /^([a-z]:)/i.exec(d.labels.dir ?? '')?.[1]?.toUpperCase() ?? d.labels.dir;
-      if (d.value < 85 || volumes.has(vol)) continue;
-      volumes.add(vol);
-      items.push({ tone: d.value >= 95 ? 'danger' : 'warning', title: `${esc(vol)} is ${pct(d.value)} full`, detail: 'Databases on this volume will stop growing when it fills.', action: { label: 'See capacity', go: 'databases/capacity' } });
-    }
-    for (const m of samples(snap, 'iris_db_max_size_mb')) {
-      if (m.value <= 0) continue;
-      const size = value(snap, 'iris_db_size_mb', { id: m.labels.id });
-      if (size / m.value >= 0.9) items.push({ tone: 'warning', title: `${esc(m.labels.id)} is near its size limit`, detail: `${Math.round(size)} of ${Math.round(m.value)} MB used.`, action: { label: 'See capacity', go: 'databases/capacity' } });
-    }
-    const licPct = value(snap, 'iris_license_percent_used');
-    if (licPct >= 80) items.push({ tone: licPct >= 95 ? 'danger' : 'warning', title: `License ${pct(licPct)} used`, detail: 'New connections are refused when license units run out.', action: { label: 'License', go: 'settings/license' } });
-    const longest = value(snap, 'iris_trans_open_secs_max');
-    if (longest >= 60) items.push({ tone: 'warning', title: 'A transaction has been open for a long time', detail: `The longest open transaction started ${Math.round(longest)}s ago.`, action: { label: 'Processes', go: 'operations/processes' } });
-    if (dash?.Status.LastBackup === 'Never') items.push({ tone: 'warning', title: 'No backup has ever run', detail: 'There is no recorded backup of this instance.', action: { label: 'Schedule one', go: 'tasks/new' } });
-    const held = alerts.count();
-    if (alertCount > held && s.tone === 'success') items.push({ tone: 'info', title: `${alertCount - held} alert${alertCount - held === 1 ? '' : 's'} raised before the portal was watching`,
-      detail: 'IRIS delivers each alert once, so these can only be read in alerts.log.', action: { label: 'Details', go: 'logs/alerts' } });
-    if (dash && !dash.Status.SystemMonitor) items.push({ tone: 'info', title: 'System Monitor is not running', detail: 'IRIS raises no health alerts of its own until it runs. Start it from a %SYS terminal.', action: { label: 'Copy command', copy: 'do ^%SYSMONMGR' } });
-
-    $('attention-count').textContent = items.length ? `${items.length} item${items.length === 1 ? '' : 's'}` : '';
+  // ── Needs attention ──
+  let issuesSig = '';
+  let highlighted = false;
+  const renderIssues = (): void => {
+    if (!facts.snap && !facts.dash && !facts.graph) return; // nothing read yet: keep the skeleton
+    const all = buildIssues(facts);
+    const shown = expanded ? all : all.slice(0, MAX_ISSUES);
+    const sig = JSON.stringify([shown, all.length, expanded]);
+    if (sig === issuesSig) return;
+    issuesSig = sig;
+    $('attention-count').textContent = all.length ? String(all.length) : '';
     const el = $('attention');
-    el.innerHTML = items.length === 0
-      ? `<div class="all-clear"><ev-icon name="check-circle" size="md"></ev-icon><div><strong>All clear</strong><span>Nothing on this instance needs you right now.</span></div></div>`
-      : `<ul class="attention-list">${items.map((a) => `
-          <li class="attention attention--${a.tone}">
-            <ev-icon name="${a.tone === 'info' ? 'info' : 'alert-triangle'}" size="sm"></ev-icon>
-            <div class="attention-text"><strong>${a.title}</strong><span>${a.detail}</span></div>
-            ${a.action ? `<button type="button" class="btn btn--sm" ${a.action.go ? `data-go="${a.action.go}"` : `data-copy="${esc(a.action.copy ?? '')}" title="${esc(a.action.copy ?? '')}"`}>${a.action.label}</button>` : ''}
-          </li>`).join('')}</ul>`;
-    wireLinks(el);
-    el.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => b.addEventListener('click', () => {
-      void navigator.clipboard.writeText(b.dataset.copy ?? '').then(() => {
-        b.textContent = 'Copied';
-        setTimeout(() => { b.textContent = 'Copy command'; }, 1600);
-      });
+    el.innerHTML = all.length === 0
+      ? `<div class="home-clear"><span class="home-clear-icon"><ev-icon name="check" size="sm"></ev-icon></span><strong>All clear</strong><span>Nothing on this instance needs you right now.</span></div>`
+      : `<ul class="home-issues">${shown.map((a) => issueRow(a)).join('')}</ul>`;
+    // The footer row always exists, so both cards' footers share a baseline.
+    const foot = $('attention-foot');
+    foot.innerHTML = all.length > MAX_ISSUES ? `<button type="button" class="link" id="issues-more">${expanded ? 'Show fewer' : `Show all ${all.length}`}</button>` : '';
+    foot.querySelector('#issues-more')?.addEventListener('click', () => { expanded = !expanded; renderIssues(); });
+    el.querySelectorAll<HTMLButtonElement>('[data-issue]').forEach((b) => b.addEventListener('click', () => {
+      const issue = all.find((x) => x.id === b.dataset.issue);
+      if (!issue) return;
+      const act = issue.action;
+      if (act.copy) {
+        void navigator.clipboard.writeText(act.copy).then(() => {
+          b.textContent = 'Copied';
+          setTimeout(() => { b.textContent = act.label; }, 1600);
+        }, () => { /* clipboard blocked: the command is in the tooltip */ });
+      } else if (act.select && act.go) linkTo(ctx.navigate, act.go as 'security/users', act.select);
+      else if (act.go) ctx.navigate(act.go);
     }));
+    // "#/home/overview/security": the status bar's Security item lands on its row.
+    if (ctx.param && !highlighted) {
+      const row = el.querySelector<HTMLElement>(`[data-issue-row="${CSS.escape(ctx.param)}"]`);
+      if (row) {
+        highlighted = true;
+        row.classList.add('home-issue--hl');
+        row.scrollIntoView({ block: 'nearest' });
+        setTimeout(() => row.classList.remove('home-issue--hl'), 2400);
+      }
+    }
   };
+  const issueRow = (a: Issue): string => `
+    <li class="home-issue" data-tone="${a.tone}" data-issue-row="${esc(a.id)}">
+      <span class="home-issue-dot" aria-label="${a.tone === 'danger' ? 'Critical' : a.tone === 'warning' ? 'Warning' : 'Note'}"></span>
+      <div class="home-issue-text"><strong>${esc(a.title)}</strong><span title="${esc(a.detail)}">${esc(a.detail)}</span></div>
+      <button type="button" class="btn btn--sm home-issue-act" data-issue="${esc(a.id)}"${a.action.copy ? ` title="${esc(a.action.copy)}"` : ''}>${esc(a.action.label)}</button>
+    </li>`;
 
-  const renderUpcoming = (tasks: UpcomingTask[]): void => {
+  // ── Coming up: the next runs, flat ──
+  let runs: UpcomingTask[] | null = null;
+  const renderUpcoming = (): void => {
     const el = $('upcoming');
-    if (tasks.length === 0) {
-      el.innerHTML = `<div class="all-clear all-clear--neutral"><ev-icon name="calendar" size="md"></ev-icon><div><strong>Nothing scheduled</strong><span>The task manager has no upcoming runs.</span></div></div>`;
+    if (!runs) return;
+    if (runs.length === 0) {
+      el.innerHTML = `<div class="home-clear home-clear--neutral"><span class="home-clear-icon"><ev-icon name="calendar" size="sm"></ev-icon></span><strong>Nothing scheduled</strong><span>The Task Manager has no upcoming runs.</span></div>`;
       return;
     }
-    // Group runs that share a start time under one time header.
-    const today = new Date().toDateString();
-    const groups: Array<{ when: string; at: Date; names: string[] }> = [];
-    for (const t of tasks.slice(0, 7)) {
-      const at = irisDate(t.Datetime);
-      const day = at.toDateString() === today ? 'Today' : at.toLocaleDateString(undefined, { weekday: 'short' });
-      const when = `${day} ${at.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}`;
-      const last = groups[groups.length - 1];
-      if (last && last.when === when) last.names.push(t.Name);
-      else groups.push({ when, at, names: [t.Name] });
-    }
-    el.innerHTML = groups.map((g) => `
-      <div class="group-head"><span class="row-time">${esc(g.when)}</span><span class="row-meta">${esc(relative(g.at))}</span></div>
-      <ul class="rows">${g.names.map((n) => `<li class="row row--compact"><span class="row-main">${esc(n)}</span></li>`).join('')}</ul>`).join('');
+    el.innerHTML = `<ul class="home-runs">${runs.slice(0, MAX_RUNS).map((t) =>
+      `<li class="home-run"><span class="home-run-name" title="${esc(`${t.Name} · ${t.Namespace}`)}">${esc(t.Name)}</span><span class="home-run-when">${future(irisDate(t.Datetime))}</span></li>`).join('')}</ul>`;
   };
+  // Keep "in 24m" current between reads.
+  const tick = setInterval(renderUpcoming, 30_000);
+  ctx.onLeave(() => clearInterval(tick));
 
-  // "Busiest right now": CPU used between polls, as % of one core —
-  // lifetime CPU would always crown the same long-running daemons.
-  let irisCore: number | null = null; // IRIS processes together, % of one core
+  // ── Below the fold ──
   const renderBusiest = (c: IrisCpu): void => {
     irisCore = c.total;
-    renderStats();
     const active = c.procs
       .map((p) => ({ p, pct: c.pct.get(p.Pid) ?? 0 }))
       .filter((x) => x.pct > 0.05)
       .sort((a, b) => b.pct - a.pct)
-      .slice(0, 6);
-    if (!active.some((x) => x.pct >= 1)) {
-      // Near-idle: say so, instead of bars that make 0.3% look like load.
-      const top = active[0];
-      const sys = snap ? Math.round(value(snap, 'iris_cpu_usage')) : NaN;
-      $('busiest').innerHTML = `<div class="all-clear all-clear--neutral"><ev-icon name="cpu" size="md"></ev-icon><div><strong>Idle</strong>
-        <span>No IRIS process is above 1% of one core.${Number.isFinite(sys) ? ` System CPU (${sys}%) is almost all outside IRIS.` : ''}${top ? ` Most active: <span class="mono">${esc(middle(top.p.Routine || '(no routine)', 30))}</span> at ${top.pct.toFixed(1)}%.` : ''}</span></div></div>`;
-      return;
-    }
-    // Bars are a share of one full core, never relative to the busiest process.
+      .slice(0, 5);
+    busyCount = c.procs.filter((p) => (c.pct.get(p.Pid) ?? 0) >= 1).length;
+    const system = c.procs.filter((p) => !p.Username).length;
+    split = { user: c.procs.length - system, system };
+    irisIdle = busyCount === 0;
+    $('top-card').hidden = irisIdle;
+    $('home-below').classList.toggle('home-below--one', irisIdle);
+    renderStats();
+    if (irisIdle) return;
     $('busiest').innerHTML = `<ul class="rows">${active.map(({ p, pct: c }) => `
-      <li class="row row--bar">
-        <span class="row-main mono" title="${esc(p.Routine)}">${esc(middle(p.Routine || '(no routine)', 34))}</span>
-        <span class="row-sub">${p.Username ? esc(p.Username === 'UnknownUser' ? 'Unauthenticated' : p.Username) : 'System'} · PID ${esc(p.Pid)}</span>
-        <span class="minibar" title="Share of one CPU core"><span style="width:${Math.max(1, Math.min(100, c))}%"></span></span>
-        <span class="row-meta">${c < 10 ? c.toFixed(1) : Math.round(c)}% CPU</span>
+      <li class="row">
+        <span class="row-main mono" title="${esc(p.Routine)} · PID ${esc(p.Pid)}">${esc(middle(p.Routine || '(no routine)', 48))}</span>
+        <span class="row-meta" title="Share of one CPU core over the last few seconds">${c < 10 ? c.toFixed(1) : Math.round(c)}%</span>
       </li>`).join('')}</ul>`;
   };
-
-  const renderStorage = (): void => {
-    if (!snap) return;
-    const vols = new Map<string, { full: number; free: number }>();
-    for (const s of samples(snap, 'iris_disk_percent_full')) {
-      const vol = /^([a-z]:)/i.exec(s.labels.dir ?? '')?.[1]?.toUpperCase() ?? s.labels.dir;
-      if (!vols.has(vol)) vols.set(vol, { full: s.value, free: value(snap, 'iris_directory_space', { id: s.labels.id }) });
-    }
-    const dbTotal = samples(snap, 'iris_db_size_mb').reduce((a, s) => a + s.value, 0);
-    $('storage').innerHTML = `<ul class="rows">
-      ${[...vols].map(([vol, v]) => `<li class="row row--stack">
-        <div class="row-line"><span class="row-main">${esc(vol)}</span><span class="row-meta">${pct(v.full)} used · ${mb(v.free)} free</span></div>
-        <div class="bar bar--${band(v.full, 85, 95)}"><span style="width:${Math.min(100, v.full)}%"></span></div></li>`).join('')}
-      <li class="row"><span class="row-main">Databases</span><span class="row-meta">${samples(snap, 'iris_db_size_mb').length} · ${mb(dbTotal)}</span></li>
-      <li class="row"><span class="row-main">Journal files</span><span class="row-meta">${mb(value(snap, 'iris_jrn_size'))}</span></li>
-      <li class="row"><span class="row-main">Last backup</span>${dash?.Status.LastBackup === 'Never'
-        ? `<span class="row-meta row-meta--warning"><ev-icon name="alert-triangle" size="xs"></ev-icon>Never</span>`
-        : `<span class="row-meta">${dash ? esc(dash.Status.LastBackup) : '—'}</span>`}</li>
-    </ul>`;
+  const renderInstance = (): void => {
+    const d: Dashboard | null | undefined = facts.dash;
+    const snap = facts.snap;
+    if (!d && !snap) return;
+    // Not ui.ts kv: a Home tile cell (kv-cell), with the tooltip on the whole cell.
+    const kv = (k: string, v: string, hint = ''): string => `<div class="kv-cell"${hint ? ` title="${esc(hint)}"` : ''}><dt>${k}</dt><dd>${v}</dd></div>`;
+    const dash = (s: string | undefined): string => (s && s.trim() ? esc(s) : '—');
+    $('inst').innerHTML = `<dl class="kv-grid">
+      ${kv('Last backup', dash(d?.Status.LastBackup))}
+      ${kv('Web sessions', snap ? compact(value(snap, 'iris_csp_sessions')) : '—')}
+      ${kv('Database space', dash(d?.SystemUsage.DatabaseSpace))}
+      ${kv('Journal space', dash(d?.SystemUsage.JournalSpace))}
+      ${kv('Lock table', dash(d?.SystemUsage.LockTable))}
+      ${kv('Write daemon', dash(d?.SystemUsage.WriteDaemon))}
+    </dl>`;
   };
 
-  const loadSlow = async (): Promise<void> => {
-    const [d, t] = await Promise.allSettled([getDashboard(), getUpcomingTasks()]);
-    if (d.status === 'fulfilled') dash = d.value;
-    if (t.status === 'fulfilled') renderUpcoming(t.value);
-    else { $('upcoming').innerHTML = errorPanel(t.reason, 'retry-upcoming'); $('upcoming').querySelector('#retry-upcoming')?.addEventListener('click', () => void loadSlow()); }
-    renderHeading(); renderAttention(); renderStorage();
+  // ── Reads ──
+  let alive = true;
+  ctx.onLeave(() => { alive = false; });
+  void apiAvailable().then((ok) => (ok ? fsRoots() : null)).then((r) => {
+    if (!alive || !r || r.restricted) return;
+    roots = r.roots;
+    renderStats();
+  }, () => { /* optional: the metrics feed's drives still show */ });
+  const loadSlow = async (fresh = false): Promise<void> => {
+    const [d, t, j, h, jr, g] = await Promise.allSettled([
+      issueSources.dashboard(fresh), getUpcomingTasks(), issueSources.jobs(fresh), issueSources.history(fresh), issueSources.journal(fresh), issueSources.graph(),
+    ]);
+    if (!alive) return;
+    if (d.status === 'fulfilled' && d.value) facts.dash = d.value;
+    if (j.status === 'fulfilled') facts.jobs = j.value;
+    if (h.status === 'fulfilled') facts.history = h.value;
+    if (jr.status === 'fulfilled') facts.journal = jr.value;
+    if (g.status === 'fulfilled') facts.graph = g.value;
+    if (t.status === 'fulfilled') { runs = t.value; renderUpcoming(); }
+    else if (!runs) { $('upcoming').innerHTML = errorPanel(t.reason, 'retry-upcoming'); $('upcoming').querySelector('#retry-upcoming')?.addEventListener('click', () => void loadSlow(true)); }
+    renderHeading(); renderIssues(); renderInstance();
   };
   void loadSlow();
-  const slow = setInterval(() => void loadSlow(), 30000);
+  const slow = setInterval(() => void loadSlow(), 30_000);
   ctx.onLeave(() => clearInterval(slow));
 
-  $('busiest').innerHTML = '<div class="row-measuring">Measuring CPU use…</div>';
   ctx.onLeave(irisCpu.subscribe((c, err) => {
     if (c) { renderBusiest(c); return; }
-    $('busiest').innerHTML = errorPanel(err);
+    if (err) { $('top-card').hidden = false; $('busiest').innerHTML = errorPanel(err); }
   }));
-
-  ctx.onLeave(metrics.subscribe((s, at) => {
-    snap = s;
-    alertCount = value(s, 'iris_system_alerts');
+  ctx.onLeave(metrics.subscribe((s: Snapshot, at) => {
+    facts.snap = s;
     updated(at);
-    renderHeading(); renderStats(); renderAttention(); renderStorage();
+    renderHeading(); renderStats(); renderIssues(); renderInstance();
   }, (err) => {
+    if (facts.snap) return;
     $('attention').innerHTML = errorPanel(err, 'retry-metrics');
     $('attention').querySelector('#retry-metrics')?.addEventListener('click', () => void metrics.refresh());
   }));
-  ctx.onLeave(alerts.subscribe(() => renderAttention()));
+  ctx.onLeave(alerts.subscribe((list) => {
+    facts.alerts = list;
+    renderIssues();
+    renderHeading();
+  }));
 }

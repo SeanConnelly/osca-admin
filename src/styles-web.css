@@ -1,0 +1,140 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Web & APIs: API explorer, DocDB applications, privileged routine applications. Tokens only. */
+
+/* A live one-line answer under a form field ("Today that's 3 users…"). */
+.web-preview { margin: 2px 0 0; font-size: 12px; line-height: 1.45; color: var(--portal-muted); }
+.web-preview:empty { display: none; }
+
+/* ── Privileged routine applications: repeating lines in the editor ── */
+.pr-rows { display: flex; flex-direction: column; gap: 10px; }
+.pr-rows:empty { display: none; }
+.pr-edit-row { display: grid; gap: 8px; align-items: end; padding: 10px; border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); background: var(--ev-surface-1); }
+.pr-edit-row--code { grid-template-columns: minmax(0, 1fr) 104px 140px auto; }
+.pr-edit-row--rule { grid-template-columns: minmax(0, 1fr) auto; }
+.pr-edit-row--rule .pr-rule-targets { grid-column: 1 / 2; }
+.pr-edit-row--rule > ev-icon-button { grid-row: 1; grid-column: 2; align-self: end; }
+.pr-edit-row > ev-icon-button { margin-bottom: 2px; }
+.pr-rows + .btn { align-self: flex-start; margin-top: 8px; }
+@media (max-width: 720px) {
+  .pr-edit-row--code { grid-template-columns: minmax(0, 1fr) auto; }
+  .pr-edit-row--code > ev-form-field:first-child, .pr-edit-row--code > :first-child { grid-column: 1 / -1; }
+}
+/* Detail rows: code listed, and matching-role rules. */
+.pr-code .row, .pr-rules .row { min-height: 36px; }
+.pr-rules .row-main { display: flex; align-items: center; gap: 6px; }
+.pr-rules .row-chips { font-size: 12px; color: var(--portal-muted); flex-wrap: wrap; justify-content: flex-end; }
+
+/* DocDB: the service line above the list. */
+.web-service-note { margin: 0; }
+
+/* ── API explorer ── */
+.ex-api-slot { width: 240px; flex: 0 0 auto; }
+/* The line about the chosen API: one fixed-height line, so the grid never moves as it fills in. */
+.ex-about { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; height: 24px; min-width: 0; font-size: 12px; color: var(--portal-muted); }
+.ex-about-text { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-about-text .mono { color: var(--ev-color-text-primary); }
+/* The about line as a three-cell strip: "Base path /api/admin | Sign-in Password | Required resource —". */
+.ex-about-text { gap: 0; }
+.ex-fact { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; padding: 0 14px; border-left: 1px solid var(--ev-border-1); white-space: nowrap; }
+.ex-fact:first-child { padding-left: 0; border-left: 0; }
+.ex-fact:first-child { flex: 0 1 auto; overflow: hidden; }
+.ex-fact-label { color: var(--portal-faint, var(--ev-color-text-tertiary)); }
+.ex-fact-value { color: var(--ev-color-text-primary); overflow: hidden; text-overflow: ellipsis; }
+.ex-about-links { flex: 0 0 auto; display: flex; gap: 16px; }
+.ex-about-links .link, .ex-open { display: inline-flex; align-items: center; gap: 2px; margin: 0; text-decoration: none; }
+
+.ex-title { font-size: 13px; }
+.ex-desc { margin: 0 var(--portal-pad) 8px; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); white-space: pre-line; overflow-wrap: anywhere; }
+.ex-desc-more { margin: 0 var(--portal-pad) 8px; }
+.ex-desc-more > summary { cursor: pointer; font-size: 12px; font-weight: 500; color: var(--ev-accent-11, var(--ev-accent)); }
+.ex-desc-more .ex-desc { margin: 6px 0 0; max-height: 280px; overflow: auto; }
+
+.ex-params { list-style: none; margin: 0; padding: 2px 0 0; }
+.ex-param { padding: 8px var(--portal-pad); border-top: 1px solid var(--ev-border-1); }
+.ex-param:first-child { border-top: 0; }
+.ex-param-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--ev-color-text-primary); }
+.ex-param-head .mono { overflow-wrap: anywhere; }
+.ex-param-meta { flex: 0 0 auto; font-size: 11.5px; color: var(--portal-faint); white-space: nowrap; }
+.ex-param-desc { margin: 3px 0 0; font-size: 12px; line-height: 1.45; color: var(--portal-muted); white-space: pre-line; overflow-wrap: anywhere; }
+
+.ex-try { display: flex; flex-direction: column; gap: 10px; padding: 6px var(--portal-pad) 0; }
+.ex-url { margin: 0; padding: 6px 8px; min-height: 30px; font: 11.5px/1.5 var(--ev-font-family-mono, monospace); color: var(--ev-color-text-primary); background: var(--ev-surface-inset, var(--ev-neutral-2)); border-radius: var(--ev-radius-sm, 4px); overflow-wrap: anywhere; }
+.ex-auth { margin: -4px 0 0; min-height: 16px; font-size: 11.5px; color: var(--portal-faint); }
+.ex-try-actions { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+.ex-try-actions .btn ev-icon { margin-right: 4px; }
+.ex-missing { font-size: 12px; color: var(--ev-color-warning); }
+
+.ex-result { padding: 12px 0 16px; }
+.ex-result-line { display: flex; align-items: center; gap: 10px; padding: 0 var(--portal-pad) 4px; }
+.ex-result-meta { font-size: 12px; color: var(--portal-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ex-open { margin: 0 0 0 auto; text-decoration: none; }
+.ex-body { max-height: 420px; overflow: auto; white-space: pre; overflow-wrap: normal; }
+.ex-body:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+
+/* ── Tasks › Schedule: a task that runs the same way every day is one merged cell ──
+   Text only, "Every day · 00:00", 13px secondary, left-aligned at the Today column; the row's own
+   1px rule is the only line. An empty day is a tertiary "—". */
+.sch-merged-text { display: block; font-size: 13px; line-height: 18px; color: var(--ev-color-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sch-empty { color: var(--ev-color-text-tertiary); }
+
+/* ── Tasks › Upcoming: New task wizard in the drawer ──
+   The wizard's own Back / Next row is replaced by the drawer's footer (Cancel · Back · Next / Create task). */
+.tw { display: block; }
+.tw::part(navigation) { display: none; }
+.tw::part(content) { outline: none; }
+.tw ev-wizard-step > .crud-section:first-child { margin-top: 0; }
+.tw-review-list { margin: 0; }
+.tw-review-list dd { white-space: normal; overflow-wrap: anywhere; }
+.tw-review-note { margin: 12px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--portal-muted); }
+
+/* ── Web applications: the list region (the peek and full view are objectDetail's .od-*) ── */
+.wa-list-view { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; }
+.wa-roles { padding: 4px var(--portal-pad) 8px; font-size: 12.5px; line-height: 1.7; color: var(--ev-color-text-primary); overflow-wrap: anywhere; }
+.wa-roles .link, .od-kv .link { text-decoration: none; }
+.wa-roles .link:hover, .od-kv .link:hover { text-decoration: underline; }
+.wa-card-link { margin: 4px var(--portal-pad) 8px; font-size: 12.5px; }
+
+/* ── Logs › Audit log: the event select is 220px (the footer carries the record count) ── */
+#rec-event-slot.audit-event-pick { width: 220px; }
+
+/* ── Tasks: the task peek and full view (objectDetail; content in task-detail.ts) ── */
+.td-sentence { margin: 2px var(--portal-pad) 4px; font-size: 13px; line-height: 1.45; color: var(--ev-color-text-primary); }
+.od-card-body > .td-sentence:first-child { margin-top: 8px; }
+.td-output { margin: 4px var(--portal-pad) 8px; max-height: 220px; overflow: auto; }
+.od-full > .td-notice { margin: 0; }
+.od-section > p, .od-card-body > p { margin: 4px var(--portal-pad) 6px; font-size: 12.5px; line-height: 1.45; color: var(--ev-color-text-secondary); }
+
+/* ── Schedule: grid times in sans tabular figures (not bold mono), and the folded "every day" group ── */
+.sch-week .sch-times { font-family: var(--ev-font-family); font-size: 12.5px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.sch-week .sch-times b { font-weight: 500; }
+.sch-daily-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 500; color: var(--ev-color-text-primary); cursor: pointer; }
+.sch-daily-toggle:hover { text-decoration: underline; text-underline-offset: 2px; }
+.sch-daily-toggle:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; border-radius: 2px; }
+.sch-week tr.sch-daily-row th { padding-left: 28px; }
+
+/* Web app full view: the description as the first card's lead line. */
+.od-card-body > .wa-lead, .od-card-body > .td-lead { margin: 8px var(--portal-pad) 6px; font-size: 13px; line-height: 1.45; color: var(--ev-color-text-secondary); }
+
+/* Web app: the class allow-list (peek section and full-view card). */
+.wa-pct-row dd { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Web app full view: wide cards list rows two to a line, each label 150px from its value (not at the card's far edge). */
+.wa-kv2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wa-kv2 .od-kv-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); justify-content: start; }
+.wa-kv2 .od-kv-row dt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wa-kv2 .od-kv-row dd { text-align: left; }
+@container (max-width: 760px) { .wa-kv2 { grid-template-columns: minmax(0, 1fr); } }
+/* The description lead: body text in the primary colour with a hairline under it, so it never reads as a label missing its value. */
+.od-card-body > .wa-lead { margin: 6px var(--portal-pad) 6px; padding-bottom: 8px; border-bottom: 1px solid var(--ev-border-1); color: var(--ev-color-text-primary); }
+/* The title follows the one rule for every full view: the path is mono on no background, like Users and Roles. */
+
+/* Web app full view: every app has the same cards in the same places. The last card of each column
+   stretches, so both columns end on the same line whatever each app lists. */
+#wa-full .od-cols { align-items: stretch; }
+#wa-full .od-col > .od-card:last-child { flex: 1 1 auto; }
+/* A card with nothing to list says so in one calm line. */
+.od-card-body > .wa-empty, .od-section > .wa-empty { color: var(--ev-color-text-tertiary); }
+
+/* A group of fields shown for one kind of app (CSP files, JWT): the section's own 12px rhythm. */
+.wa-form-group:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
+.wa-form-group > [hidden] { display: none; }

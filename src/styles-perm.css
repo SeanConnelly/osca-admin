@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Shared permission control (perm-control.ts): Read | Read & change, or a Use toggle. Never wraps. */
+.perm-seg-host { display: inline-flex; flex: 0 0 auto; }
+.perm-seg { display: inline-flex; flex-wrap: nowrap; white-space: nowrap; border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-md, 6px); overflow: hidden; background: var(--ev-surface-1); }
+.perm-seg-btn { padding: 3px 10px; font: inherit; font-size: 12px; line-height: 18px; white-space: nowrap; color: var(--portal-muted); background: transparent; border: 0; cursor: pointer; }
+.perm-seg-btn + .perm-seg-btn { border-left: 1px solid var(--ev-border-2); }
+.perm-seg-btn:hover { color: var(--ev-color-text-primary); background: var(--ev-state-hover-bg, var(--ev-surface-2)); }
+.perm-seg-btn[aria-checked="true"], .perm-seg-btn[aria-pressed="true"] { color: var(--ev-color-text-primary); font-weight: 600; background: var(--ev-surface-3, var(--ev-surface-2)); box-shadow: inset 0 -2px 0 var(--ev-accent-9, var(--ev-color-primary)); }
+.perm-seg-btn:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }

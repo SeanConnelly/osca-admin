@@ -1,0 +1,113 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Logs › Messages log */
+
+/* Footer: the figures on the left, "Load more" on the right; the button keeps its width whatever it says. */
+.msg-foot { display: flex; align-items: center; gap: 12px; min-height: 28px; }
+.msg-foot .table-foot { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg-foot .btn { flex: none; min-width: 104px; justify-content: center; }
+
+/* The full message: every line, as IRIS wrote it. */
+.msg-text {
+  margin: 6px var(--portal-pad) 0; padding: 10px 12px; max-height: 420px; overflow: auto;
+  font: 11.5px/1.55 var(--ev-font-family-mono, monospace); white-space: pre-wrap; overflow-wrap: anywhere;
+  color: var(--ev-color-text-primary); background: var(--ev-surface-inset, var(--ev-neutral-2));
+  border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px);
+}
+.od-card-body > .msg-text { margin: 4px var(--portal-pad) 4px; max-height: none; } /* the card body has no side padding of its own */
+.msg-text:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.msg-section-head { display: flex; align-items: center; justify-content: space-between; margin-right: var(--portal-pad); }
+.msg-section-head .od-section-head { margin-bottom: 0; }
+
+/*
+ * One layout whatever the filter: the workspace fills the page down to the footer and the grid
+ * scrolls inside it (sticky header), whether it holds 3 rows or a windowed 200+. Without this a
+ * short list hugged its rows and a long one grew past the page (or stopped at the grid's 600px cap).
+ */
+#msg-panel { flex: 1 1 0; min-height: 0; }
+#msg-panel > #msg-wrap { height: 100%; max-height: none; overflow: hidden; }
+#msg-wrap > ev-data-grid { box-sizing: border-box; height: 100%; max-height: none; scrollbar-gutter: stable; }
+/* Alerts follows the house list rule instead: with no peek open the table frame hugs its rows; it fills the
+   height down to the footer only when the rows overflow (the grid scrolls inside it, header sticky) or a peek is
+   open (so the peek is full height, head sticky, body scrolling). The wrap is a column flexbox so the grid
+   shrinks to the frame instead of spilling past it. */
+#alert-panel:has(ev-data-grid) { flex: 0 1 auto; min-height: 0; }
+#alert-panel[open]:has(ev-data-grid) { flex: 1 1 0; }
+#alert-panel > #alert-wrap:has(> ev-data-grid) { display: flex; flex-direction: column; height: 100%; max-height: 100%; overflow: hidden; box-sizing: border-box; }
+#alert-wrap > ev-data-grid { box-sizing: border-box; flex: 0 1 auto; min-height: 0; max-height: none; scrollbar-gutter: stable; }
+#alert-panel[open] > #alert-wrap > ev-data-grid { flex: 1 1 auto; } /* one frame: the grid's, down beside the peek */
+
+/* Alert and log line full views: no strip (time, process and count are in the header line). */
+#alert-full .od-strip[style*="--strip-cols:0"], #msg-full .od-strip[style*="--strip-cols:0"] { display: none; }
+
+/* No match: the designed empty state inside the grid's frame, under its header (which stays). */
+#msg-wrap > .msg-empty {
+  position: absolute; inset: var(--msg-grid-head, 28px) 1px 1px; display: flex; flex-direction: column;
+  background: var(--ev-color-surface-base, var(--ev-surface-2)); border-radius: 0 0 var(--ev-radius-md, 6px) var(--ev-radius-md, 6px);
+}
+#msg-wrap > .msg-empty .empty-std { min-height: 0; padding-bottom: 6vh; }
+/* The shared rule drops the list box's frame around an empty state; here the grid is still there. */
+#msg-panel:has(.msg-empty) { background: var(--ev-surface-2); border-color: var(--ev-border-1); }
+
+/* Load more sits level with the toolbar's Export CSV: one 28px height. */
+.msg-foot .btn { height: 28px; }
+
+/* Repeats: every time the line was written. */
+.msg-times { margin: 4px var(--portal-pad) 0; padding: 0; list-style: none; columns: 2; column-gap: 16px; font-size: 12.5px; line-height: 22px; font-variant-numeric: tabular-nums; color: var(--ev-color-text-secondary); }
+.od-card-body > .msg-times { margin: 4px var(--portal-pad) 0; columns: 1; }
+.msg-times-more { margin: 4px var(--portal-pad) 0; font-size: 12px; color: var(--ev-color-text-tertiary); }
+.od-card-body > .msg-times-more { margin: 4px var(--portal-pad) 0; }
+
+/* Around it in the log: the neighbouring lines, in the list's order; this one marked with the lists' selection tint. */
+.msg-near { margin: 0; padding: 0; list-style: none; }
+.msg-near-row {
+  display: grid; grid-template-columns: 164px 92px minmax(0, 1fr); align-items: center; gap: 12px; width: 100%;
+  min-height: 30px; padding: 0 8px; font: inherit; font-size: 12.5px; text-align: left; color: var(--ev-color-text-secondary);
+  background: none; border: 0; border-radius: var(--ev-radius-sm, 4px); cursor: pointer;
+}
+.msg-near-row:hover { background: var(--ev-neutral-3, var(--ev-surface-3)); }
+.msg-near-row:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }
+.msg-near-row.is-current { cursor: default; color: var(--ev-color-text-primary); background: var(--ev-state-selected-bg, var(--ev-neutral-3)); }
+/* Alerts: no Level column when the list has none. */
+.msg-near--nolevel .msg-near-row { grid-template-columns: 164px minmax(0, 1fr); }
+.msg-near-row:disabled { opacity: 1; }
+.msg-near-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.msg-near-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-near-rep { margin-left: 8px; color: var(--ev-color-text-tertiary); }
+/* The current line in "Around it": marked by the tint and a word, its text is already the page's title. */
+.msg-near-self { font-weight: 500; }
+
+/* A folded row's quiet suffix, as the Alerts list writes it: "· repeated 12×". */
+.msg-tail { color: var(--ev-color-text-tertiary); white-space: nowrap; }
+.msg-tail-sep { margin: 0 6px; }
+
+/* A burst's distinct texts, each with how often: the count in a fixed column so the texts line up. */
+.msg-kinds { margin: 4px var(--portal-pad) 0; padding: 0; list-style: none; font-size: 12.5px; line-height: 1.5; }
+.msg-kinds > li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; padding: 4px 0; border-top: 1px solid var(--ev-border-1); }
+.msg-kinds > li:first-child { border-top: 0; }
+.msg-kind-n { text-align: right; font-variant-numeric: tabular-nums; color: var(--ev-color-text-secondary); }
+.msg-kind-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ev-color-text-primary); }
+.od-card-body > .msg-kinds { margin: 4px var(--portal-pad) 0; }
+
+/* A burst's every line: time, then the text on one line. */
+.msg-every { margin: 4px var(--portal-pad) 0; padding: 0; list-style: none; font-size: 12.5px; line-height: 22px; }
+.msg-every > li { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 12px; }
+.msg-every-time { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ev-color-text-secondary); }
+.msg-every-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ev-color-text-primary); }
+
+/* Alerts: a long diagnostic dump folded behind "Show raw text" (its facts are in Details). */
+.msg-raw { margin: 6px var(--portal-pad) 0; }
+.od-card-body > .msg-raw { margin: 0; }
+.msg-raw > summary {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; cursor: pointer; list-style: none;
+  font-size: 12.5px; color: var(--ev-color-text-secondary); border-radius: var(--ev-radius-sm, 4px);
+}
+.msg-raw > summary::-webkit-details-marker { display: none; }
+.msg-raw > summary::before { content: '▸'; font-size: 10px; color: var(--ev-color-text-tertiary); }
+.msg-raw[open] > summary::before { content: '▾'; }
+.msg-raw > summary:hover { color: var(--ev-color-text-primary); }
+.msg-raw > summary:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.msg-raw > .msg-text { margin: 6px 0 0; }
+
+/* Alerts peek: what happened, said once, under the title (which names what raised it). */
+.msg-lead { margin: 12px var(--portal-pad) 0; font-size: 13px; line-height: 1.5; color: var(--ev-color-text-primary); overflow-wrap: anywhere; }
+.msg-lead + .od-section > .msg-raw { margin-top: 0; }

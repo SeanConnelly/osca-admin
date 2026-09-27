@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Security › Encryption and Security › Managed file transfer — only what the shared sheets have no class for. */
+
+/* Lists in the detail panel (databases using a key, keys in a file). */
+.enc-list { list-style: none; margin: 0; padding: 2px 0 4px; }
+.enc-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px var(--portal-pad); font-size: 12.5px; }
+.enc-list li > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enc-list li > :last-child { flex-shrink: 0; color: var(--portal-muted); }
+.enc-list .link { margin: 0; }
+.enc-empty { margin: 2px var(--portal-pad) 6px; font-size: 12.5px; color: var(--portal-faint); }
+
+/* Key files tab: look inside a key file by path. */
+.enc-files { display: flex; flex-direction: column; gap: 14px; max-width: 820px; padding: 18px var(--portal-pad) 24px; }
+.enc-files-intro { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--portal-muted); }
+.enc-files-intro b { color: var(--ev-color-text-primary); font-weight: 600; }
+.enc-file-form { display: flex; align-items: flex-end; gap: 8px; }
+.enc-file-form > :first-child { flex: 1 1 auto; min-width: 0; }
+.enc-file-form > .btn { margin-bottom: 2px; }
+.enc-file-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.enc-file-actions a.btn { text-decoration: none; }
+.enc-file-card { background: var(--ev-surface-1); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); }
+.enc-file-card h3 { margin: 0; padding: 10px var(--portal-pad) 4px; font-size: 12px; font-weight: 600; color: var(--ev-color-text-primary); }
+.enc-file-card .enc-list li + li { border-top: 1px solid var(--ev-border-1); }
+.enc-key-desc { display: block; font-size: 12px; color: var(--portal-muted); white-space: normal; }
+
+/* Button-styled links inside the shared empty state: never underlined. */
+.empty-std-actions a.btn, .empty-std-actions a.btn:hover { text-decoration: none; }

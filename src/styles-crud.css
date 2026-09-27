@@ -1,0 +1,204 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Shared CRUD building blocks (src/crud.ts): buttons, menu, dialog, toast, editor, fields, pickers. Tokens only. */
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.crud-new, .crud-more, .crud-submit { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.crud-new ev-icon, .crud-more ev-icon { margin: 0; vertical-align: 0; }
+.btn:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.btn--primary { color: var(--ev-color-text-on-primary); background: var(--ev-color-primary); border-color: var(--ev-color-primary); }
+.btn--primary:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--ev-color-primary-hover); }
+.btn--danger-solid { color: var(--ev-color-text-on-danger); background: var(--ev-color-danger); border-color: var(--ev-color-danger); }
+.btn--danger-solid:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--ev-color-danger-hover); }
+.btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+.btn[aria-disabled="true"]:hover { background: var(--ev-surface-2); }
+.btn--primary[aria-disabled="true"]:hover { background: var(--ev-state-hover-bg); }
+/* 12px between "New …" and the next header action, and none after it, so the last button ends where the table ends. */
+.crud-new { margin-right: 0; }
+.crud-new ~ :not([hidden]):not(.crud-new) { margin-left: 8px; }
+.crud-new ~ :not([hidden]) ~ :not([hidden]) { margin-left: 0; }
+.crud-more { width: 26px; padding: 0; }
+
+/* Reason tooltip for blocked actions (one element, floated on the body). */
+.crud-tip {
+  position: fixed; z-index: var(--ev-z-tooltip); max-width: 280px; padding: 6px 9px;
+  font-size: 12px; line-height: 1.4; color: var(--ev-color-text-primary);
+  background: var(--ev-surface-2); border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-sm, 4px);
+  box-shadow: var(--ev-shadow-md, var(--ev-shadow-lg)); pointer-events: none;
+}
+.crud-tip[hidden] { display: none; }
+
+/* ── More menu ───────────────────────────────────────────── */
+.crud-menu {
+  position: fixed; z-index: var(--ev-z-dropdown); min-width: 200px; max-width: 300px; padding: 4px;
+  background: var(--ev-surface-2); border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-md, 6px);
+  box-shadow: var(--ev-shadow-lg);
+}
+.crud-menu-item {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 6px 8px; text-align: left;
+  font: inherit; font-size: 12.5px; color: var(--ev-color-text-primary); background: none; border: 0;
+  border-radius: var(--ev-radius-sm, 4px); cursor: pointer;
+}
+.crud-menu-item:hover:not([aria-disabled="true"]), .crud-menu-item:focus-visible { background: var(--ev-state-hover-bg); }
+.crud-menu-item:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }
+.crud-menu-item[aria-disabled="true"] { cursor: not-allowed; }
+.crud-menu-item[aria-disabled="true"] .crud-menu-label, .crud-menu-item[aria-disabled="true"] .crud-menu-icon { opacity: .55; }
+.crud-menu-item--danger { color: var(--ev-color-danger); }
+.crud-menu-icon { display: inline-flex; width: 16px; flex: 0 0 16px; padding-top: 1px; }
+.crud-menu-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.crud-menu-reason { font-size: 11.5px; line-height: 1.35; color: var(--portal-muted); }
+.crud-menu-sep { height: 1px; margin: 4px 2px; background: var(--ev-border-1); }
+
+/* ── Dialog ──────────────────────────────────────────────── */
+.crud-dialog-body { display: flex; flex-direction: column; gap: 10px; max-width: 420px; font-size: 13px; line-height: 1.5; color: var(--ev-color-text-primary); }
+.crud-dialog-text p { margin: 0 0 8px; }
+.crud-dialog-text p:last-child { margin-bottom: 0; }
+.crud-dialog-text .dim, .crud-dialog-text small { color: var(--portal-muted); }
+.crud-dialog-foot { display: flex; justify-content: flex-end; gap: 8px; }
+.crud-dialog-alt { margin-right: auto; }
+.crud-type-label { font-size: 12.5px; color: var(--portal-muted); }
+.crud-type-label strong { color: var(--ev-color-text-primary); }
+.crud-native-input {
+  height: 30px; padding: 0 8px; font: inherit; font-size: 12.5px; color: var(--ev-color-text-primary);
+  background: var(--ev-surface-2); border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-md, 6px);
+}
+.crud-native-input:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 0; }
+
+/* ── Toast: bottom-right, above the 26px status bar ──────── */
+ev-toast-container.crud-toasts { bottom: calc(26px + var(--ev-space-3, 12px)); right: var(--ev-space-4, 16px); }
+
+/* ── Editor shell (in the detail panel) ──────────────────── */
+.detail.crud-editing { padding-bottom: 0; }
+.crud-editor { display: flex; flex-direction: column; min-height: 100%; }
+.crud-editor [hidden] { display: none !important; }
+.crud-editor-head { border-bottom: 1px solid var(--ev-border-1); padding-bottom: 10px; }
+.crud-editor-body { flex: 1 0 auto; padding-bottom: 16px; }
+.crud-editor-body[inert] { opacity: .6; }
+.crud-editor-foot {
+  position: sticky; bottom: 0; z-index: 1; display: flex; justify-content: flex-end; gap: 8px;
+  padding: 10px var(--portal-pad); background: var(--ev-surface-2); border-top: 1px solid var(--ev-border-1);
+}
+.crud-submit ev-spinner { color: currentColor; }
+.crud-banner {
+  display: flex; align-items: flex-start; gap: 10px; margin: 12px var(--portal-pad) 0; padding: 10px 12px;
+  font-size: 12.5px; line-height: 1.45; color: var(--ev-color-text-primary);
+  background: color-mix(in srgb, var(--ev-color-danger) 8%, var(--ev-surface-2));
+  border: 1px solid color-mix(in srgb, var(--ev-color-danger) 45%, var(--ev-border-1)); border-radius: var(--ev-radius-md, 6px);
+}
+.crud-banner:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.crud-banner > ev-icon { flex: 0 0 auto; margin-top: 2px; color: var(--ev-color-danger); }
+.crud-banner > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.crud-banner strong { font-weight: 600; }
+.crud-banner span { color: var(--portal-muted); }
+
+/* ── Sections and fields ─────────────────────────────────── */
+.crud-section { padding: 14px var(--portal-pad) 4px; }
+.crud-section + .crud-section { border-top: 1px solid var(--ev-border-1); }
+.crud-section-title { margin: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--ev-color-text-primary); }
+.crud-section-hint { margin: 0 0 6px; font-size: 12px; line-height: 1.45; color: var(--portal-muted); }
+.crud-section-body { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
+.crud-field { display: block; }
+.crud-mono { font-family: var(--ev-font-family-mono, monospace); }
+.crud-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.crud-check { display: flex; flex-direction: column; gap: 2px; }
+.crud-check-hint { margin: 0 0 0 26px; font-size: 12px; line-height: 1.4; color: var(--portal-muted); }
+.crud-check:has(> ev-toggle) > .crud-check-hint { margin-left: 44px; } /* a switch is wider than a checkbox */
+.crud-inline-error { margin: 2px 0 0 26px; font-size: 12px; color: var(--ev-color-danger); }
+.crud-inline-error--block { margin: 0; }
+
+/* Toned note inside a form or picker. */
+.crud-note {
+  display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.45;
+  color: var(--ev-color-text-primary); background: var(--ev-surface-1); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px);
+}
+.crud-note > ev-icon { flex: 0 0 auto; margin-top: 1px; color: var(--ev-color-info); }
+.crud-note--warning { border-color: color-mix(in srgb, var(--ev-color-warning) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-warning) 8%, var(--ev-surface-2)); }
+.crud-note--warning > ev-icon { color: var(--ev-color-warning); }
+.crud-note ul { margin: 0; padding-left: 16px; }
+.crud-note .mono { font-size: 11.5px; }
+
+/* ── Pickers ─────────────────────────────────────────────── */
+.crud-picker { display: flex; flex-direction: column; gap: 8px; }
+.crud-picker [hidden] { display: none !important; }
+.crud-picker-label { font-size: 12px; font-weight: 500; color: var(--ev-color-text-primary); }
+.crud-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.crud-chips-empty { font-size: 12px; color: var(--portal-muted); }
+.crud-chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 4px 0 9px; max-width: 100%;
+  font: 12px var(--ev-font-family-mono, monospace); color: var(--ev-color-text-primary);
+  background: var(--ev-surface-1); border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-full, 999px);
+}
+.crud-chip--warn { border-color: color-mix(in srgb, var(--ev-color-warning) 55%, var(--ev-border-2)); }
+.crud-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crud-chip button {
+  display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;
+  color: var(--portal-muted); background: none; border: 0; border-radius: 50%; cursor: pointer;
+}
+.crud-chip button:hover { color: var(--ev-color-text-primary); background: var(--ev-state-hover-bg); }
+.crud-chip button:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 0; }
+.crud-search { position: relative; display: flex; align-items: center; }
+.crud-search > ev-icon { position: absolute; left: 8px; color: var(--portal-muted); pointer-events: none; }
+.crud-search .crud-native-input { width: 100%; padding-left: 28px; }
+.crud-options {
+  max-height: 240px; overflow-y: auto; padding: 4px; margin: 0; list-style: none;
+  background: var(--ev-surface-2); border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-md, 6px);
+  box-shadow: var(--ev-shadow-md, var(--ev-shadow-lg));
+}
+.crud-option { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: var(--ev-radius-sm, 4px); cursor: pointer; }
+.crud-option[aria-selected="true"], .crud-option:hover { background: var(--ev-state-hover-bg); }
+.crud-option[aria-selected="true"] { outline: 1px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -1px; }
+.crud-option-name { font: 12px var(--ev-font-family-mono, monospace); color: var(--ev-color-text-primary); }
+.crud-option-warn { font-size: 11.5px; line-height: 1.35; color: var(--ev-color-warning); }
+.crud-option-sub { font-size: 12px; line-height: 1.35; color: var(--ev-color-text-primary); }
+.crud-option-desc { font-size: 11px; font-style: italic; line-height: 1.35; color: var(--portal-muted); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.crud-option-group { padding: 8px 8px 3px; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--portal-muted); cursor: default; }
+.crud-options-empty { padding: 10px 8px; font-size: 12px; color: var(--portal-muted); }
+
+/* Resource permission rows */
+.crud-perms { display: flex; flex-direction: column; border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); }
+.crud-perm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 7px 6px 7px 10px; }
+.crud-perm-row + .crud-perm-row { border-top: 1px solid var(--ev-border-1); }
+.crud-perm-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.crud-perm-main { font-size: 12.5px; line-height: 1.4; color: var(--ev-color-text-primary); }
+.crud-perm-code { font-size: 11px; color: var(--portal-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crud-perm-group { padding: 8px 10px 3px; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--portal-muted); background: var(--ev-surface-1); border-top: 1px solid var(--ev-border-1); }
+.crud-perm-group:first-child { border-top: 0; border-radius: var(--ev-radius-md, 6px) var(--ev-radius-md, 6px) 0 0; }
+.crud-perm-name .crud-perm-none { color: var(--ev-color-warning); }
+/* Controls never wrap: the name column shrinks instead. */
+.crud-perm-toggles { display: flex; align-items: center; flex-shrink: 0; white-space: nowrap; }
+.crud-perm-toggles ev-segmented-button { white-space: nowrap; }
+/* Non-database rows: a fixed label chip (nothing to choose; × removes the row). */
+.crud-perm-fixed {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 8px; white-space: nowrap;
+  font-size: 11.5px; font-weight: 500; color: var(--portal-muted); cursor: default;
+  background: var(--ev-state-hover-bg); border: 0; border-radius: var(--ev-radius-full, 999px); /* a label, not a control */
+}
+.crud-perms-empty { padding: 12px 10px; font-size: 12px; color: var(--portal-muted); }
+.crud-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;
+  color: var(--portal-muted); background: none; border: 0; border-radius: var(--ev-radius-sm, 4px); cursor: pointer;
+}
+.crud-icon-btn:hover { color: var(--ev-color-text-primary); background: var(--ev-state-hover-bg); }
+.crud-icon-btn:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 0; }
+.crud-add { align-self: flex-start; }
+
+/* Why Save is blocked, shown beside the buttons. */
+.crud-foot-hint { flex: 1 1 auto; min-width: 0; font-size: 12px; color: var(--ev-color-warning); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Footer: "2 to fix: Username, Confirm password" as links to the fields. */
+.crud-foot-link, .crud-link {
+  padding: 0; font: inherit; color: inherit; background: none; border: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.crud-foot-link { font-weight: 600; }
+.crud-link { color: var(--ev-accent-9, var(--ev-color-primary)); font-weight: 500; }
+.crud-foot-link:focus-visible, .crud-link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; border-radius: 2px; }
+
+/* pathField (crud.ts): a text input with "Browse…" beside it. */
+.crud-path { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+/* A form panel never scrolls sideways (focusing a control must not shift the labels). */
+.detail.crud-editing, aside.crud-editing { overflow-x: hidden; }
+.crud-path > ev-input { flex: 1 1 auto; min-width: 0; }
+.crud-path-browse { flex: none; }
+:root:not(.osca-fs) .crud-path-browse { display: none; }
+.crud-path-hint { margin: 4px 0 0; font-size: 12px; color: var(--ev-color-text-tertiary); }
+.crud-path-hint[data-tone="warning"] { color: var(--st-fg-warning, var(--ev-color-warning)); }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Throughput rates computed by the portal from cumulative counters
  * (%Api.Admin /v2/monitor/system-usage), not taken from the Prometheus
@@ -12,7 +13,8 @@ import { authFetch } from './auth';
 
 const POLL_MS = 5000;
 const WINDOW_MS = 20000;
-const HISTORY = 60;
+/** One hour of readings at 5 s, kept for the whole app session (Activity's "1h" range). */
+const HISTORY = 720;
 
 interface Counters {
   AllGlobalReferences: number;
@@ -30,7 +32,21 @@ const KEYS: RateKey[] = ['AllGlobalReferences', 'GlobalUpdateReferences', 'Routi
 
 let raw: Array<{ at: number; c: Counters }> = [];
 let latest: Rates | null = null;
+/** History and times survive a page reload (sessionStorage, this tab only); readings older than an hour are dropped. */
+const HIST_KEY = 'osca-portal:usage-history';
 const history = new Map<RateKey, number[]>();
+/** When each reading landed (ms), aligned with the tail of every series. */
+const times: number[] = [];
+try {
+  const saved = JSON.parse(sessionStorage.getItem(HIST_KEY) ?? 'null') as { times: number[]; history: Array<[RateKey, number[]]> } | null;
+  if (saved && Array.isArray(saved.times)) {
+    const keep = saved.times.filter((t) => t >= Date.now() - HISTORY * POLL_MS).length;
+    if (keep) {
+      times.push(...saved.times.slice(-keep));
+      for (const [k, v] of saved.history) history.set(k, v.slice(-keep));
+    }
+  }
+} catch { /* start empty */ }
 const listeners = new Set<(r: Rates, at: Date) => void>();
 let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -54,33 +70,12 @@ async function poll(): Promise<void> {
       if (h.length > HISTORY) h.shift();
       history.set(k, h);
     }
+    times.push(at);
+    if (times.length > HISTORY) times.shift();
+    try { sessionStorage.setItem(HIST_KEY, JSON.stringify({ times, history: [...history] })); } catch { /* memory only */ }
     latest = r;
     for (const fn of listeners) fn(r, new Date());
   } catch { /* the metrics poller reports connectivity */ }
-}
-
-async function counters(): Promise<Counters> {
-  const res = await authFetch('/api/admin/v2/monitor/system-usage', { headers: { Accept: 'application/json' } });
-  return (await res.json()).result as Counters;
-}
-
-/**
- * What the portal's own monitoring costs, per second, in each counter:
- * counters read either side of one metrics scrape, minus a no-scrape
- * baseline read, spread over the metrics poll interval.
- */
-export async function observerCost(pollSeconds: number): Promise<Rates | null> {
-  try {
-    const a = await counters();
-    await authFetch('/api/monitor/metrics', { headers: { Accept: 'text/plain' } });
-    const b = await counters();
-    const c = await counters();
-    const out = {} as Rates;
-    for (const k of KEYS) out[k] = Math.max(0, (b[k] - a[k]) - (c[k] - b[k])) / pollSeconds;
-    return out;
-  } catch {
-    return null;
-  }
 }
 
 export const usage = {
@@ -94,4 +89,9 @@ export const usage = {
     };
   },
   trend: (k: RateKey): number[] => [...(history.get(k) ?? [])],
+  /** A series with the time of each reading, oldest first. */
+  history: (k: RateKey): { values: number[]; times: number[] } => {
+    const values = [...(history.get(k) ?? [])];
+    return { values, times: times.slice(-values.length) };
+  },
 };

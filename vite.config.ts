@@ -1,11 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { defineConfig, loadEnv } from 'vite';
 import { resolve } from 'node:path';
 
 /**
- * Dev server proxies the IRIS SysAdmin REST API and injects Basic auth from
- * .env on the SERVER side — the browser app calls same-origin `/api/...`
- * (no CORS), and credentials never reach client JS. Mirrors OSCA's
- * vite.config.ts dev-proxy pattern (see ../OSCA/vite.config.ts).
+ * The dev server proxies the IRIS SysAdmin REST API and injects Basic auth
+ * from .env on the server side: the browser app calls same-origin `/api/...`
+ * (no CORS), and credentials never reach client JS.
  */
 export default defineConfig(({ mode, command, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -30,8 +30,9 @@ export default defineConfig(({ mode, command, isPreview }) => {
     },
   };
 
-  // Dev: resolve the linked @evolution-ui/core to its SOURCE (not built dist),
-  // so library edits hot-reload straight in — same trick OSCA uses.
+  // Resolve the linked @evolution-ui/core to its source (not its built dist),
+  // for both dev and build, so library edits hot-reload straight in. This needs
+  // the evolution-ui-2 checkout next to this repo.
   const EVO_SRC = resolve(process.cwd(), '../evolution-ui-2/src');
   const evoDevAlias = [
     { find: /^@evolution-ui\/core\/design\/(.*)$/, replacement: `${EVO_SRC}/design/$1` },
@@ -51,7 +52,8 @@ export default defineConfig(({ mode, command, isPreview }) => {
     server: {
       port: 5274,
       strictPort: true,
-      proxy: { '/api': adminProxy },
+      // /csp too, so Management Portal deep links open on the dev server as they do in production.
+      proxy: { '/api': adminProxy, '/csp': adminProxy },
       fs: { allow: ['..'] },
     },
     build: {

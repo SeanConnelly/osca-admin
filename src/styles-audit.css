@@ -1,0 +1,60 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Security › Audit log. Everything else comes from styles.css. */
+
+.toolbar-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.audit-event-pick { width: 300px; }
+
+.audit-desc { margin: 12px var(--portal-pad) 0; font-size: 13px; line-height: 1.5; color: var(--ev-color-text-primary); overflow-wrap: anywhere; }
+.audit-meaning { margin: 2px 0 0; font-size: 12px; color: var(--portal-muted); }
+/* Record peek: the Event data section head carries its Copy button on the right. */
+.audit-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 24px; margin: 0 var(--portal-pad) 4px; }
+.audit-section-head .od-section-head { margin: 0; }
+.audit-data {
+  margin: 6px var(--portal-pad) 0; padding: 10px 12px; max-height: 300px; overflow: auto;
+  font: 11.5px/1.55 var(--ev-font-family-mono, monospace); white-space: pre-wrap; overflow-wrap: anywhere;
+  color: var(--ev-color-text-primary); background: var(--ev-surface-inset, var(--ev-neutral-2));
+  border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px);
+}
+.audit-data:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.audit-roles { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.empty > .btn { flex-shrink: 0; }
+/* Under a short grid: why the log holds so few records. */
+.audit-rows-note { margin: 0; padding: 12px var(--portal-pad); font-size: 12.5px; color: var(--portal-muted); border-top: 1px solid var(--ev-border-1); }
+/* Events peek: the event's Source/Type/Name as one mono line, with a copy button (icon swap only, so nothing shifts). */
+.audit-ident { display: flex; align-items: center; gap: 4px; height: 24px; margin: 10px var(--portal-pad) 0; min-width: 0; color: var(--ev-color-text-secondary); }
+.audit-ident > .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audit-ident-copy { flex: none; width: 24px; height: 24px; padding: 0; justify-content: center; }
+/* Events peek: its latest records, one 28px row each (time · user · description); a row opens that record. */
+.audit-recent { list-style: none; margin: 0; padding: 0; }
+.audit-recent-row {
+  display: grid; grid-template-columns: 96px minmax(0, 90px) minmax(0, 1fr); align-items: center; gap: 10px;
+  width: 100%; height: 28px; padding: 0 var(--portal-pad); border: 0; background: transparent; font: inherit; font-size: 12.5px;
+  text-align: left; color: var(--ev-color-text-primary); cursor: pointer;
+}
+button.audit-recent-row:hover { background: var(--ev-state-hover-bg); }
+button.audit-recent-row:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }
+.audit-recent-row > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audit-recent-when { font-variant-numeric: tabular-nums; color: var(--ev-color-text-secondary); }
+.audit-recent-what { color: var(--ev-color-text-secondary); }
+.audit-recent-wait { cursor: default; grid-template-columns: 1fr; }
+.audit-recent-wait > i { display: block; height: 10px; width: 70%; border-radius: 3px; background: var(--ev-neutral-3, var(--ev-border-1)); }
+
+/* The grid-wrap gains a 1px border while a peek is open (styles.css); keep a transparent one while it's
+   closed, so opening a peek doesn't move the rows by a pixel. */
+#audit-panel:not([open]) > #audit-wrap { border: 1px solid transparent; }
+
+/* Records tab: one status line above the toolbar ("Auditing is off · 36 of 75 events enabled · View events ›"). */
+.audit-status { display: flex; align-items: center; flex-wrap: wrap; flex: none; min-height: 20px; margin: 0; font-size: 12.5px; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.audit-status[hidden] { display: none; }
+.audit-status b { font-weight: 600; color: var(--ev-color-text-primary); }
+.audit-status-off { color: var(--ev-color-text-primary); font-weight: 500; }
+.audit-status .link { font-size: inherit; }
+
+/* The house list rule: with no peek open the table frame hugs its rows; it fills the height down to the footer
+   only when the rows overflow (the grid then scrolls inside it, header sticky) or a peek is open (so the peek is
+   full height). The wrap is a column flexbox so the grid shrinks to the frame instead of spilling past it. */
+#audit-panel:has(ev-data-grid) { flex: 0 1 auto; min-height: 0; }
+#audit-panel[open]:has(ev-data-grid) { flex: 1 1 0; }
+#audit-panel > #audit-wrap:has(> ev-data-grid) { display: flex; flex-direction: column; height: 100%; max-height: 100%; overflow: hidden; box-sizing: border-box; }
+#audit-wrap > ev-data-grid { box-sizing: border-box; flex: 0 1 auto; min-height: 0; max-height: none; scrollbar-gutter: stable; }
+#audit-panel[open] > #audit-wrap > ev-data-grid { flex: 1 1 auto; } /* one frame: the grid's, down beside the peek */

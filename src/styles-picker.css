@@ -1,0 +1,112 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Server file picker (file-picker.ts): a desktop "Open" dialog, at most 880 × 560. Tokens only.
+   One 16px inset on every edge; bands of 48 (header) · 44 (path bar) · 28 (column header, rows) · 56 (footer).
+   Two type sizes: 13 for content, 12/500 tertiary for labels. */
+.fp-dialog { --ev-dialog-width: 880px; --ev-dialog-footer-padding: 12px 16px; }
+.fp-dialog::part(dialog) { width: min(880px, calc(100vw - 32px)); }
+.fp-dialog::part(title) { box-sizing: border-box; display: flex; align-items: center; height: 48px; margin: 0; padding: 0 56px 0 16px; }
+.fp-dialog::part(close-button) { top: 10px; right: 10px; width: 28px; height: 28px; }
+.fp-dialog::part(body) { padding: 0; overflow: hidden; }
+.fp-dialog::part(footer) { min-height: 56px; box-sizing: border-box; }
+.fp { display: flex; flex-direction: column; height: min(428px, calc(100vh - 160px)); min-height: 280px; font-size: 13px; color: var(--ev-color-text-primary); border-top: 1px solid var(--ev-border-1); border-bottom: 1px solid var(--ev-border-1); }
+
+/* Path bar (44): Back · Up · Refresh · breadcrumbs · search */
+.fp-bar { box-sizing: border-box; display: flex; align-items: center; gap: 4px; height: 44px; padding: 8px 16px; border-bottom: 1px solid var(--ev-border-1); }
+.fp-iconbtn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 28px; height: 28px; padding: 0; color: var(--ev-color-text-secondary); background: none; border: 1px solid transparent; border-radius: var(--ev-radius-md, 6px); cursor: pointer; }
+.fp-iconbtn:hover:not(:disabled) { color: var(--ev-color-text-primary); background: var(--ev-state-hover-bg); }
+.fp-iconbtn:disabled { color: var(--ev-color-text-tertiary); cursor: default; opacity: .6; }
+.fp-iconbtn:focus-visible, .fp-crumb:focus-visible, .fp-place:focus-visible, .fp-col:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; }
+.fp-path { box-sizing: border-box; flex: 1 1 auto; min-width: 0; display: flex; align-items: center; height: 28px; margin-left: 4px; padding: 0 4px; background: var(--ev-color-surface-base); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); cursor: text; }
+.fp-path:hover { border-color: var(--ev-border-2); }
+.fp-crumbs { display: flex; align-items: center; min-width: 0; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+.fp-crumbs::-webkit-scrollbar { display: none; }
+.fp-crumb { flex: none; padding: 2px 6px; font: inherit; font-size: 13px; color: var(--ev-color-text-secondary); background: none; border: 0; border-radius: var(--ev-radius-sm, 4px); cursor: pointer; }
+.fp-crumb:hover { color: var(--ev-color-text-primary); background: var(--ev-state-hover-bg); }
+.fp-crumb[aria-current] { color: var(--ev-color-text-primary); font-weight: 500; }
+.fp-crumb-sep { flex: none; color: var(--ev-color-text-tertiary); padding: 0 1px; }
+.fp-path-input { flex: 1 1 auto; min-width: 0; height: 24px; padding: 0 4px; font: 13px var(--ev-font-family-mono, monospace); color: var(--ev-color-text-primary); background: transparent; border: 0; outline: none; }
+.fp-search-wrap { position: relative; flex: 0 0 200px; display: flex; align-items: center; margin-left: 4px; }
+.fp-search-wrap > ev-icon { position: absolute; left: 8px; width: 14px; height: 14px; color: var(--ev-color-text-tertiary); pointer-events: none; }
+.fp-search, .fp-type { box-sizing: border-box; height: 28px; font: inherit; font-size: 13px; color: var(--ev-color-text-primary); background: var(--ev-color-surface-base); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); }
+.fp-search { width: 100%; padding: 0 8px 0 28px; }
+.fp-search:focus, .fp-type:focus { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -1px; }
+
+/* Rail (188) + list */
+.fp-main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 188px minmax(0, 1fr); }
+.fp-rail { overflow-y: auto; padding: 8px; border-right: 1px solid var(--ev-border-1); background: var(--ev-surface-1); }
+.fp-rail-group + .fp-rail-group { margin-top: 12px; }
+.fp-rail-label { padding: 4px 8px; font-size: 12px; font-weight: 500; color: var(--ev-color-text-tertiary); }
+.fp-place { display: flex; align-items: center; gap: 8px; width: 100%; height: 28px; padding: 0 8px; font: inherit; font-size: 13px; text-align: left; color: var(--ev-color-text-secondary); background: none; border: 0; border-radius: 6px; cursor: pointer; }
+.fp-place:hover { color: var(--ev-color-text-primary); background: var(--ev-state-hover-bg); }
+.fp-place > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-place > ev-icon { flex: none; color: var(--ev-color-text-tertiary); }
+.fp-place[aria-current] { background: var(--ev-state-selected-bg); color: var(--ev-color-text-primary); }
+.fp-place[aria-current] > ev-icon { color: var(--ev-accent-9, var(--ev-color-primary)); }
+
+/* List: the column header is sticky INSIDE the scroller, so header and rows share one width. */
+.fp-list { position: relative; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0; outline: none; }
+.fp-head, .fp-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 84px; align-items: center; column-gap: 12px; padding: 0 16px; }
+.fp-head { position: sticky; top: 0; z-index: 1; height: 28px; background: var(--ev-color-surface-base); border-bottom: 1px solid var(--ev-border-1); }
+.fp-col { display: inline-flex; align-items: center; gap: 4px; min-width: 0; padding: 0; font: inherit; font-size: 12px; font-weight: 500; color: var(--ev-color-text-tertiary); background: none; border: 0; cursor: pointer; text-align: left; }
+.fp-col:hover { color: var(--ev-color-text-secondary); }
+.fp-col.is-sorted { color: var(--ev-color-text-secondary); }
+/* Size is right-aligned: the arrow sits before the label so the label's edge stays on the numbers' edge. */
+.fp-col--size { justify-content: flex-start; flex-direction: row-reverse; justify-self: end; }
+.fp-arrow { flex: none; width: 12px; height: 12px; color: var(--ev-color-text-secondary); opacity: 0; }
+.fp-col:hover .fp-arrow { opacity: .4; }
+.fp-col.is-sorted .fp-arrow { opacity: 1; }
+.fp-rows { padding: 2px 0; }
+.fp-row { height: 28px; font-size: 13px; cursor: default; user-select: none; }
+.fp-row:hover { background: var(--ev-state-hover-bg); }
+/* Selection, Finder / Explorer style: neutral when the list isn't focused, accent fill when it is. */
+.fp-row.is-active { background: var(--ev-state-selected-bg); box-shadow: none; }
+.fp-list:focus-visible { box-shadow: none; }
+.fp-list:focus .fp-row.is-active { background: var(--ev-accent-9, var(--ev-color-primary)); color: var(--ev-color-text-on-primary, #fff); }
+.fp-list:focus .fp-row.is-active .fp-mod,
+.fp-list:focus .fp-row.is-active .fp-size,
+.fp-list:focus .fp-row.is-active ev-icon { color: inherit; }
+.fp-list:focus-visible:not(:has(.is-active)) .fp-row:first-child { box-shadow: inset 0 0 0 2px var(--ev-accent-9, var(--ev-color-primary)); }
+/* Hidden files: italic names. Folder mode: files are listed for context, dimmed as a whole row, and inert. */
+.fp-row--hidden .fp-name > span { font-style: italic; }
+.fp-row--off { opacity: .45; }
+.fp-row--off:hover { background: none; }
+.fp-row--off, .fp-row--off * { cursor: default; }
+.fp-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fp-name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-name > ev-icon { flex: none; color: var(--ev-color-text-tertiary); }
+.fp-row ev-icon[name="folder"] { color: var(--ev-accent-9, var(--ev-color-primary)); }
+.fp-mod, .fp-size { color: var(--ev-color-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-size { text-align: right; }
+.fp-row--skel span { display: block; height: 10px; border-radius: 4px; background: var(--ev-surface-inset, var(--ev-state-hover-bg)); }
+.fp-row--skel span:first-child { width: 60%; }
+.fp-note { padding: 16px; font-size: 13px; color: var(--ev-color-text-tertiary); }
+.fp-error { display: flex; align-items: center; gap: 12px; margin: 12px 16px; padding: 10px 12px; font-size: 13px; background: var(--ev-surface-1); border-radius: var(--ev-radius-md, 6px); box-shadow: inset 3px 0 var(--ev-color-danger); }
+.fp-error > ev-icon { flex: none; color: var(--ev-color-danger); }
+.fp-error > div { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fp-error span { color: var(--ev-color-text-secondary); overflow-wrap: anywhere; }
+
+/* Footer (56): selection or item count · type filter · Cancel · Select */
+.fp-foot { display: flex; align-items: center; gap: 8px; width: 100%; }
+.fp-selected { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--ev-color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-mono { font-family: var(--ev-font-family-mono, monospace); color: var(--ev-color-text-primary); }
+.fp-dim { color: var(--ev-color-text-tertiary); }
+.fp-type-wrap { position: relative; flex: 0 0 200px; display: flex; align-items: center; }
+.fp-type { width: 100%; padding: 0 28px 0 8px; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.fp-type-wrap > ev-icon { position: absolute; right: 8px; width: 14px; height: 14px; color: var(--ev-color-text-tertiary); pointer-events: none; }
+/* A disabled Select is flat and neutral (not a dimmed accent that reads as pressed). */
+
+@media (max-width: 640px) {
+  .fp-main { grid-template-columns: minmax(0, 1fr); }
+  .fp-rail { display: none; }
+  .fp-search-wrap { flex-basis: 140px; }
+  .fp-head, .fp-row { grid-template-columns: minmax(0, 1fr) 72px; }
+  .fp-col--mod, .fp-mod { display: none; }
+  .fp-type-wrap { flex-basis: 140px; }
+}
+
+/* A sample drive (display-only sample data): a calm empty state, not an error. */
+.fp-sample { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 360px; margin: 64px auto 0; text-align: center; font-size: 13px; color: var(--ev-color-text-secondary); }
+.fp-sample > ev-icon { color: var(--ev-color-text-tertiary); }
+.fp-sample strong { color: var(--ev-color-text-primary); font-weight: 600; }
+.fp-tag { margin-left: 6px; font-size: 10.5px; padding: 0 5px; border-radius: 3px; color: var(--ev-color-text-tertiary); box-shadow: inset 0 0 0 1px var(--ev-border-2); }
+.fp-place > .fp-tag { flex: none; }

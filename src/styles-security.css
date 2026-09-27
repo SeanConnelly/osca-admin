@@ -1,0 +1,154 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Security › Users and Roles — only what styles.css has no class for. */
+
+/* Role / user chips in the detail panel: wrap onto as many lines as they need. */
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px var(--portal-pad) 2px; }
+.chip-list-empty { margin: 0; padding: 6px var(--portal-pad) 2px; font-size: 12.5px; color: var(--portal-faint); }
+.chip-sub { margin: 8px var(--portal-pad) 0; font-size: 12px; color: var(--portal-muted); }
+
+/* A chip that links to another user or role: the button carries focus and the click. */
+.chip-link { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; border-radius: var(--ev-radius-full, 999px); }
+.chip-link:hover ev-chip { text-decoration: underline; text-underline-offset: 2px; }
+.chip-link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; }
+
+/* Explanatory text in the panel; the description gets room under the header divider. */
+.detail-para { margin: 4px var(--portal-pad) 0; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); }
+.sec-desc { margin: 12px var(--portal-pad) 4px; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); overflow-wrap: anywhere; }
+
+/* Toned explanation (matches .callout in styles-apps.css). */
+.sec-callout {
+  display: flex; align-items: flex-start; gap: 10px; margin: 4px var(--portal-pad) 12px; padding: 10px 12px;
+  font-size: 12.5px; line-height: 1.45; color: var(--ev-color-text-primary);
+  background: var(--ev-surface-1); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px);
+}
+.sec-callout > ev-icon { flex: 0 0 auto; margin-top: 2px; color: var(--ev-color-info); }
+.sec-callout > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sec-callout strong { font-weight: 600; }
+.sec-callout span { color: var(--portal-muted); }
+.sec-callout--warning { border-color: color-mix(in srgb, var(--ev-color-warning) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-warning) 8%, var(--ev-surface-2)); }
+.sec-callout--warning > ev-icon { color: var(--ev-color-warning); }
+
+/* Locked actions: one row, never wrapping. */
+.detail-actions.sec-actions { flex-wrap: nowrap; }
+
+/* Empty state inside a grid area (e.g. "no custom roles"). */
+.grid-wrap--sec > .empty { position: absolute; inset: 44px 0 auto; }
+
+/* Check access */
+.check-row { display: flex; gap: 8px; align-items: center; padding: 6px var(--portal-pad) 0; }
+.check-row ev-select { flex: 1 1 auto; min-width: 0; }
+.check-list { list-style: none; margin: 6px 0 0; padding: 0; }
+.check-line { display: flex; gap: 10px; align-items: flex-start; padding: 6px var(--portal-pad); font-size: 12.5px; }
+.check-line > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.check-line strong { font-weight: 600; color: var(--ev-color-text-primary); }
+.check-line span { color: var(--portal-muted); line-height: 1.45; overflow-wrap: anywhere; }
+.check-line > ev-icon { flex: 0 0 auto; margin-top: 1px; color: var(--portal-muted); }
+.check-line--yes > ev-icon { color: var(--ev-color-success); }
+.check-line--no > ev-icon { color: var(--ev-color-warning); }
+.check-warn { color: var(--ev-color-warning); }
+
+/* Live previews inside the user and role forms. */
+.preview { margin-top: 8px; }
+.preview:empty { display: none; }
+/* Role editor: the live summary sits on the sections' 16px content gutter. */
+#rf-summary { padding: 0 var(--portal-pad, 16px); }
+.preview-line { margin: 4px 0; font-size: 12.5px; color: var(--ev-color-text-primary); }
+.preview-line--warn { color: var(--ev-color-warning); }
+.preview-list { margin: 2px 0 4px; padding-left: 16px; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); }
+.preview-group { font-weight: 600; color: var(--ev-color-text-primary); }
+.preview-note { margin: 4px 0 0; font-size: 12px; color: var(--portal-faint); }
+.crud-inline-note { margin: -4px 0 8px; font-size: 12.5px; color: var(--ev-color-warning); }
+.crud-inline-note .link { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+
+/* Warnings in confirm dialogs. */
+.risk-list { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
+.risk-list li + li { margin-top: 4px; }
+
+/* ── Live model chain ──────────────────────────────────── */
+.chain { flex-wrap: wrap; row-gap: 6px; margin: 8px 0 4px; }
+.chain .model-step { max-width: 100%; white-space: normal; min-width: 0; overflow-wrap: anywhere; text-align: left; font: inherit; color: var(--ev-color-text-primary); }
+.chain .model-step b { font-weight: 600; }
+.chain-link { cursor: pointer; }
+.chain-link:hover { border-color: var(--ev-border-3, var(--ev-border-2)); background: var(--ev-state-hover-bg, var(--ev-surface-2)); }
+.chain-link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; }
+.chain-missing { border: 1px dashed var(--ev-color-danger); background: color-mix(in srgb, var(--ev-color-danger) 7%, var(--ev-surface-1)); }
+.chain-missing b { color: var(--ev-color-danger); }
+.detail .chain, .check-line .chain { margin-left: 0; }
+
+/* ── What this user can do ─────────────────────────────── */
+.acc-headline { margin: 2px var(--portal-pad) 8px; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--ev-color-text-primary); }
+.acc-filter { display: flex; align-items: center; gap: 6px; margin: 0 var(--portal-pad) 6px; font-size: 12px; color: var(--portal-muted); cursor: pointer; }
+.acc-group { border-top: 1px solid var(--ev-border-1); }
+.acc-group--flat { border-top: 0; }
+.acc-group-head { display: flex; align-items: baseline; gap: 8px; padding: 7px var(--portal-pad); font-size: 12.5px; font-weight: 600; color: var(--ev-color-text-primary); cursor: pointer; list-style: none; }
+.acc-group-head::-webkit-details-marker { display: none; }
+.acc-group-head::before { content: "▸"; color: var(--portal-faint); font-size: 10px; }
+.acc-group[open] > .acc-group-head::before { content: "▾"; }
+.acc-group-head:focus-visible, .acc-summary:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }
+.acc-count { font-weight: 400; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.acc-risk { margin-left: auto; font-size: 11.5px; font-weight: 500; color: var(--ev-color-warning); }
+.acc-list { list-style: none; margin: 0; padding: 0 0 4px; }
+.acc-list--nested { padding-left: 12px; }
+.acc-line { padding: 0; }
+.acc-summary { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 1px; padding: 5px var(--portal-pad) 5px calc(var(--portal-pad) + 12px); font-size: 12.5px; cursor: pointer; list-style: none; }
+.acc-summary::-webkit-details-marker { display: none; }
+.acc-summary--static { cursor: default; }
+.acc-text { color: var(--ev-color-text-primary); min-width: 0; overflow-wrap: anywhere; }
+.acc-perms { display: inline-flex; }
+.acc-why { flex-basis: 100%; font-size: 12px; color: var(--portal-muted); overflow-wrap: anywhere; }
+.acc-body { padding: 0 var(--portal-pad) 6px calc(var(--portal-pad) + 12px); }
+.acc-raw { display: block; margin-top: 2px; font: 11px var(--ev-font-family-mono, monospace); color: var(--portal-faint); }
+.acc-only-special [data-common] { display: none; }
+
+/* ── Check access (checklist) ──────────────────────────── */
+.check-answer { margin: 8px var(--portal-pad) 0; padding: 8px 10px; font-size: 13px; border-radius: var(--ev-radius-md, 6px); border: 1px solid var(--ev-border-1); }
+.check-answer--yes { border-color: color-mix(in srgb, var(--ev-color-success) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-success) 7%, var(--ev-surface-2)); }
+.check-answer--no { border-color: color-mix(in srgb, var(--ev-color-warning) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-warning) 7%, var(--ev-surface-2)); }
+.check-line--info > ev-icon { color: var(--portal-faint); }
+.check-line > div { flex: 1 1 auto; }
+.check-fixes { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px var(--portal-pad) 4px; }
+
+/* ── Risk banner and "Who has power" ───────────────────── */
+.sec-banner { flex: 0 0 auto; margin: 0; align-items: center; }
+.sec-banner > div { flex: 1 1 auto; }
+.sec-callout--danger { border-color: color-mix(in srgb, var(--ev-color-danger) 45%, var(--ev-border-1)); background: color-mix(in srgb, var(--ev-color-danger) 8%, var(--ev-surface-2)); }
+.sec-callout--danger > ev-icon { color: var(--ev-color-danger); }
+.power-body { display: flex; flex-direction: column; gap: 14px; max-height: 60vh; overflow-y: auto; }
+.power-section h3 { margin: 0 0 2px; font-size: 13px; font-weight: 600; }
+.power-section p { margin: 0 0 4px; font-size: 12.5px; color: var(--portal-muted); }
+.power-list { margin: 0; padding-left: 16px; font-size: 12.5px; line-height: 1.6; }
+
+/* Held by: one line per holder with how they get it. */
+.holder-list { list-style: none; margin: 0; padding: 2px 0; }
+.holder-list li { display: flex; align-items: baseline; gap: 8px; padding: 3px var(--portal-pad); font-size: 12.5px; }
+.holder-list .holder-how { color: var(--portal-muted); overflow-wrap: anywhere; }
+.holder-list .chip-link ev-chip { vertical-align: middle; }
+/* Held by › Directly: the one exception after the chips ("May grant it to others: …"). */
+.holder-note { margin: 4px var(--portal-pad) 0; font-size: 12.5px; color: var(--portal-muted); overflow-wrap: anywhere; }
+.gain-toggle > summary { padding: 6px var(--portal-pad); font-size: 12.5px; color: var(--portal-muted); cursor: pointer; }
+.gain-toggle > summary:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }
+.risk-impact { color: var(--portal-muted); font-size: 12.5px; }
+
+/* Check access: the picker grows, the permission control drops underneath when there's no room. */
+.check-row { flex-wrap: wrap; }
+.check-row ev-select { flex: 1 1 220px; }
+.check-perm { flex: 0 0 auto; }
+.check-perm[hidden] { display: none; }
+.check-fix-risk { display: flex; gap: 6px; align-items: flex-start; margin: 8px var(--portal-pad) 0; font-size: 12.5px; line-height: 1.45; color: var(--ev-color-warning); }
+.check-fix-risk ev-icon { flex: 0 0 auto; margin-top: 2px; }
+.sec-banner > div:not(.sec-banner-actions) { display: flex; flex-direction: column; gap: 2px; }
+.sec-banner-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+.sec-banner > .sec-banner-actions { flex: 0 0 auto; flex-direction: row; align-items: center; } /* buttons sit side by side at their natural width */
+/* The path that makes UnknownUser what anyone gets: "Holds %All directly → full access". */
+.sec-path { color: var(--ev-color-text-primary); font-weight: 500; }
+
+/* Paths as one line of text (replaces the box-and-arrow chains). */
+.chain-lines { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
+.chain-line { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); overflow-wrap: anywhere; }
+.chain-name { color: var(--ev-color-text-primary); font-weight: 500; }
+.chain-here { font-family: var(--ev-font-family-mono, monospace); font-size: 12px; }
+.chain-sub { color: var(--portal-muted); }
+.chain-line .chain-link { display: inline; padding: 0; margin: 0; border: 0; background: none; font: inherit; font-weight: 500; color: var(--ev-accent-11, var(--ev-color-primary)); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 2px; }
+.chain-line .chain-link:hover { text-decoration-color: currentColor; }
+.chain-line .chain-link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 1px; border-radius: 2px; }
+.chain-line .chain-missing { border: 0; background: none; color: var(--ev-color-danger); font-weight: 500; }

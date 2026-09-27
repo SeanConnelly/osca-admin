@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OSCA Portal</title>
+    <title>OSCA Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>(function () {
       try {
         var s = JSON.parse(localStorage.getItem('evolution-ui-theme') || '{}') || {};
@@ -16,7 +17,10 @@
     })();</script>
     <style>
       html, body, #app { height: 100%; margin: 0; }
-      body { background: var(--ev-surface-1); color: var(--ev-text-1); font: 13px system-ui, sans-serif; }
+      /* Until the app's styles load, paint the theme's page colour so a reload never flashes white. */
+      html[data-theme="dark"] { background: oklch(0.165 0 262); color-scheme: dark; }
+      html[data-theme="light"] { background: #fff; color-scheme: light; }
+      body { background: var(--ev-surface-1, transparent); color: var(--ev-text-1); font: 13px system-ui, sans-serif; }
       ev-shell { height: 100vh; --ev-shell-splitter-color: var(--ev-accent); }
     </style>
   </head>

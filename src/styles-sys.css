@@ -1,0 +1,57 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Operations › Language servers, Devices, ECP — only what the shared sheets have no class for. */
+
+/* The standard empty state over the (hidden) grid. */
+.sys-empty { position: relative; }
+
+/* Explanatory text, callouts and "none" lines inside the detail panel. */
+.sys-text { margin: 10px 0 0; padding: 0 var(--portal-pad); font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); }
+.sys-text b { font-weight: 600; color: var(--ev-color-text-primary); }
+.sys-none { margin: 2px var(--portal-pad) 6px; font-size: 12.5px; color: var(--portal-faint); }
+.detail .sys-callout { margin: 12px var(--portal-pad) 0; }
+.sys-warn { color: var(--ev-color-warning); font-weight: 500; }
+
+/* Activity log: time in a fixed column, the text truncated with the full line on hover. */
+.sys-log { list-style: none; margin: 0; padding: 2px 0 4px; }
+.sys-log li { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 4px var(--portal-pad); font-size: 12px; }
+.sys-log-when { color: var(--portal-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sys-log-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ev-color-text-primary); }
+.sys-log li[data-tone="danger"] .sys-log-text { color: var(--ev-color-danger); }
+.sys-log li[data-tone="warning"] .sys-log-text { color: var(--ev-color-warning); }
+
+/* A fixed value shown in a form where a field would be (e.g. Type while editing). */
+.sys-fixed { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 12.5px; }
+.sys-fixed > span { color: var(--portal-muted); font-size: 12px; }
+.sys-fixed > b { font-weight: 600; color: var(--ev-color-text-primary); padding: 6px 0; }
+
+/* At-a-glance box above the grid: facts across. */
+.sys-summary { flex: 0 0 auto; background: var(--ev-surface-2); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-lg, 8px); overflow: hidden; }
+.sys-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 0; }
+.sys-facts > .skeleton-list { grid-column: 1 / -1; padding: 10px var(--portal-pad); }
+
+/* Short lists in the detail panel (remote databases, devices using a terminal type). */
+.sys-list { list-style: none; margin: 0; padding: 2px 0 4px; }
+.sys-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px var(--portal-pad); font-size: 12.5px; }
+.sys-list li > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sys-list li > :last-child { flex-shrink: 0; color: var(--portal-muted); }
+.sys-list .link { margin: 0; padding: 0; }
+
+/* Devices › Defaults: settings cards side by side. */
+.sys-defaults { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; padding: 12px 0; }
+.sys-card { background: var(--ev-surface-2); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-lg, 8px); overflow: hidden; }
+.sys-card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px var(--portal-pad); border-bottom: 1px solid var(--ev-border-1); }
+.sys-card h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--ev-color-text-primary); }
+.sys-card header a.btn { text-decoration: none; }
+
+/* ECP summary cells: figure + one caption. */
+.sys-fig { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-height: 72px; padding: 10px var(--portal-pad); border-right: 1px solid var(--ev-border-1); border-bottom: 1px solid var(--ev-border-1); margin: 0 -1px -1px 0; }
+.sys-fig dt { font-size: 12px; color: var(--portal-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sys-fig dd { margin: 0; font-size: 16px; font-weight: 600; color: var(--ev-color-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sys-fig small { font-size: 12px; color: var(--portal-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sys-fig[data-tone="danger"] dd { color: var(--ev-color-danger); }
+.sys-fig[data-tone="warning"] dd { color: var(--ev-color-warning); }
+
+/* ECP empty state: in-app and docs links share one style, with no visited colour. */
+#ecp-wrap .empty-std-actions a,
+#ecp-wrap .empty-std-actions a:visited { color: var(--ev-accent-11, var(--ev-color-primary)); text-decoration: none; font-size: 12.5px; font-weight: 500; }
+#ecp-wrap .empty-std-actions a:hover { text-decoration: underline; }

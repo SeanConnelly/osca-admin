@@ -1,13 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Operations › Overview — how hard the instance is working, right now and
  * over the last few minutes. Everything here comes from %Api.Monitor's
  * Prometheus feed via the shared metrics poller.
  */
-import { metrics, value, samples, trendOf, type Snapshot } from '../metrics';
-import { usage, observerCost, type RateKey, type Rates } from '../usage';
-import { METRICS_POLL_MS } from '../metrics';
+import '../styles-ops.css';
+import '@evolution-ui/core/components/ev-toggle/ev-toggle.js';
+import { metrics, value, samples, type Snapshot } from '../metrics';
+import { usage, type RateKey, type Rates } from '../usage';
+import { measureReadCosts, minCosts, portalRate, getSharedMemory, type PortalRead, type ReadCosts, type ShmRow } from '../api-ops';
 import { irisCpu, irisCaption } from '../iris-cpu';
-import { esc, pct, compact, mb, errorPanel, liveIndicator, statTile, setStat, skeleton, type ScreenCtx, type Tone } from '../ui';
+import { esc, pct, compact, duration, errorPanel, liveIndicator, statTile, setStat, sparkline, skeleton, type ScreenCtx, type Tone } from '../ui';
 
 const band = (v: number, warn: number, danger: number): Tone => (v >= danger ? 'danger' : v >= warn ? 'warning' : 'success');
 
@@ -23,11 +26,83 @@ const THROUGHPUT: Array<{ label: string; key: RateKey | 'sql'; hint: string }> =
   { label: 'Journal entries', key: 'JournalEntries', hint: 'Journal records created' },
 ];
 
-function setTile(root: ParentNode, key: string, v: number, series: number[]): void {
+/** Range control: the in-memory history only (no extra reads). */
+type Range = '15m' | '1h';
+const RANGE_MS: Record<Range, number> = { '15m': 15 * 60_000, '1h': 60 * 60_000 };
+let range: Range = '15m';
+
+/**
+ * Readings with the portal's own share taken out, per figure, with their times.
+ * Module-level so they outlive a visit, like the history they are drawn beside.
+ */
+const adjusted = new Map<RateKey, Array<{ v: number; t: number }>>();
+const ADJ_MAX = 720;
+
+/** Values from a timed series that fall inside the current range. */
+function inRange(values: number[], times: number[], now = Date.now()): number[] {
+  const from = now - RANGE_MS[range];
+  const off = times.length - values.length;
+  return values.filter((_, i) => (times[i + off] ?? now) >= from);
+}
+
+/** The one number format for Activity's cells: grouped below 10K ("1,500"), compact from 10K ("13.6K"). */
+function fig(n: number): string {
+  if (!Number.isFinite(n)) return '—';
+  return Math.abs(n) < 10_000 ? Math.round(n).toLocaleString() : compact(n);
+}
+const ms = (n: number): string => (Number.isFinite(n) ? n.toFixed(1) : '—');
+
+/** Sessions & engine: the same cell as Throughput (label, value, unit, one note line), without a trend. */
+const ENGINE: Array<{ key: string; label: string; unit?: string; hint?: string }> = [
+  { key: 'sessions', label: 'Web sessions' },
+  { key: 'gateway', label: 'Gateway connections', hint: 'Connections from the web gateway that are busy with a request now' },
+  { key: 'latency', label: 'Gateway latency', unit: 'ms' },
+  { key: 'txn', label: 'Open transactions' },
+  { key: 'cache', label: 'Cache efficiency', hint: 'Global references per physical read or write; higher is better' },
+  { key: 'wd', label: 'Write daemon cycle', unit: 'ms' },
+  { key: 'ecp', label: 'ECP connections' },
+  { key: 'sqlrt', label: 'SQL average runtime', unit: 'ms' },
+];
+
+function setTile(root: ParentNode, key: string, v: number, series: number[], prefix = ''): void {
   const tile = root.querySelector(`[data-metric="${key}"]`) as HTMLElement;
-  (tile.querySelector('.v') as HTMLElement).textContent = Number.isFinite(v) ? compact(v) : '—';
-  // min=0 / max=10 on the element keep near-zero rates drawing near-flat.
-  (tile.querySelector('ev-sparkline') as HTMLElement & { values: number[] }).values = series.length ? series : [0, 0];
+  (tile.querySelector('.v') as HTMLElement).textContent = Number.isFinite(v) ? `${prefix}${fig(v)}` : '—';
+  // Until there are 6 readings, a muted "Collecting…" instead of an empty track; then the line.
+  const slot = tile.querySelector('.ops-tp-spark') as HTMLElement;
+  const n = series.filter((x) => Number.isFinite(x)).length;
+  slot.innerHTML = n >= 6 ? sparkline(series, { height: 28 }) : '<span class="ops-collecting">Collecting…</span>';
+}
+
+/** Bytes in the unit that reads best: "812 KB", "5.3 MB". */
+function bytes(n: number): string {
+  if (!Number.isFinite(n)) return '—';
+  if (n < 1024) return `${Math.round(n)} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024).toLocaleString()} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+const SHM_TONES = ['var(--ev-color-primary)', 'var(--ev-color-info)', 'var(--ev-accent-7, var(--ev-color-primary))', 'var(--ev-neutral-6, var(--ev-border-2))', 'var(--ev-neutral-5, var(--ev-border-2))'];
+
+/** Shared memory card: one stacked bar of the biggest users, then a small table (used, heap allocated). */
+function renderShm(root: ParentNode, rows: ShmRow[]): void {
+  const el = root.querySelector('#shm') as HTMLElement | null;
+  if (!el) return;
+  const parts = rows.filter((r) => !/^(total|available)/i.test(r.Description) && r.AllUsed > 0).sort((a, b) => b.AllUsed - a.AllUsed);
+  const used = rows.find((r) => /^total$/i.test(r.Description))?.AllUsed ?? parts.reduce((t, r) => t + r.AllUsed, 0);
+  const heap = rows.find((r) => /^total smh pages allocated$/i.test(r.Description))?.SMHAllocated ?? 0;
+  (root.querySelector('#shm-total') as HTMLElement).textContent = heap ? `${bytes(used)} used · ${bytes(heap)} heap` : `${bytes(used)} used`;
+  const top = parts.slice(0, 5);
+  const rest = parts.slice(5);
+  const restUsed = rest.reduce((t, r) => t + r.AllUsed, 0);
+  const segs = [...top.map((r, i) => ({ label: r.Description, v: r.AllUsed, c: SHM_TONES[i] })), ...(restUsed ? [{ label: `${rest.length} others`, v: restUsed, c: 'var(--ev-border-2)' }] : [])];
+  const total = segs.reduce((t, s) => t + s.v, 0) || 1;
+  const bar = `<div class="shm-bar" role="img" aria-label="${esc(segs.map((s) => `${s.label} ${bytes(s.v)}`).join(', '))}">${segs.map((s) => `<span style="flex:${s.v / total};background:${s.c}" title="${esc(`${s.label}: ${bytes(s.v)}`)}"></span>`).join('')}</div>`;
+  const row = (label: string, c: string, u: number, alloc: number): string =>
+    `<tr><td><span class="shm-key" style="background:${c}"></span>${esc(label)}</td><td class="r">${bytes(u)}</td><td class="r">${alloc ? bytes(alloc) : '<span class="dim">—</span>'}</td></tr>`;
+  el.innerHTML = `${bar}
+    <table class="mini-table shm-table"><thead><tr><th>Subsystem</th><th class="r">Used</th><th class="r" title="Shared memory heap set aside for it">Heap allocated</th></tr></thead><tbody>
+      ${top.map((r, i) => row(r.Description, SHM_TONES[i], r.AllUsed, r.SMHAllocated)).join('')}
+      ${rest.length ? row(`${rest.length} others`, 'var(--ev-border-2)', restUsed, rest.reduce((t, r) => t + r.SMHAllocated, 0)) : ''}
+    </tbody></table>`;
 }
 
 export function operationsScreen(ctx: ScreenCtx): void {
@@ -40,112 +115,186 @@ export function operationsScreen(ctx: ScreenCtx): void {
     </section>
     <section class="card">
       <header class="card-head"><h2>Throughput</h2><span class="card-hint">Per second · 20 s average</span></header>
-      <div class="metric-grid">
+      <div class="metric-grid ops-tp-grid">
         ${THROUGHPUT.map((t) => `
-          <div class="metric" data-metric="${t.key}" title="${esc(t.hint)}">
+          <div class="ops-tp" data-metric="${t.key}" title="${esc(t.hint)}">
             <span class="metric-label">${t.label}</span>
-            <span class="metric-value"><span class="v">—</span><span class="unit">/s</span></span>
-            <ev-sparkline type="line" width="112" height="28" min="0" max="10"></ev-sparkline>
-            <span class="metric-own"></span>
+            <span class="ops-tp-value"><span class="v">—</span><span class="unit">/s</span></span>
+            <span class="ops-tp-spark spark-slot"><span class="ops-collecting">Collecting…</span></span>
           </div>`).join('')}
       </div>
     </section>
-    <div class="grid-5">
-      <section class="card span-3">
-        <header class="card-head"><h2>Storage</h2><button type="button" class="link" data-go="databases/capacity">Database capacity</button></header>
-        <div id="storage">${skeleton(4)}</div>
-      </section>
-      <section class="card span-2">
-        <header class="card-head"><h2>Sessions &amp; engine</h2></header>
-        <div id="engine">${skeleton(4)}</div>
-      </section>
-    </div>`;
+    <section class="card">
+      <header class="card-head"><h2>Sessions &amp; engine</h2></header>
+      <div class="metric-grid" id="engine">
+        ${ENGINE.map((e) => `
+          <div class="metric ops-metric--plain" data-engine="${e.key}"${e.hint ? ` title="${esc(e.hint)}"` : ''}>
+            <span class="metric-label">${e.label}</span>
+            <span class="metric-value"><span class="v">—</span>${e.unit ? `<span class="unit">${e.unit}</span>` : ''}</span>
+            <span class="ops-metric-note"></span>
+          </div>`).join('')}
+      </div>
+    </section>
+    <section class="card">
+      <header class="card-head"><h2>Shared memory</h2><span class="card-hint" id="shm-total"></span></header>
+      <div id="shm">${skeleton(3)}</div>
+    </section>`;
   ctx.body.querySelectorAll<HTMLElement>('[data-go]').forEach((b) => b.addEventListener('click', () => ctx.navigate(b.dataset.go ?? '')));
+  // Range: how much of the in-memory history the trends show.
+  // The page's view controls, together in the header: which history, and whether the portal's own reads count.
+  ctx.actions.insertAdjacentHTML('beforeend', `<div class="ops-head-opts" id="ops-head-opts">
+    <span class="ops-switch" title="Leave out the load this portal adds by reading these figures"><span class="ops-switch-label" id="own-label">Exclude portal monitoring</span><ev-toggle id="own-toggle" aria-labelledby="own-label"></ev-toggle></span>
+    <ev-segmented-button id="ops-range" size="sm" aria-label="Time range"></ev-segmented-button>
+  </div>`);
+  const rangeEl = ctx.actions.querySelector('#ops-range') as HTMLElement & { options: unknown; value: string };
+  rangeEl.options = [{ value: '15m', label: '15m' }, { value: '1h', label: '1h' }];
+  rangeEl.value = range;
+  rangeEl.addEventListener('ev-segmented-button-change', (e) => {
+    range = (e as CustomEvent<{ value: Range }>).detail.value;
+    paintRates();
+    if (lastSnap) render(lastSnap);
+  });
+  ctx.onLeave(() => ctx.actions.querySelector('#ops-head-opts')?.remove());
   const $ = (id: string): HTMLElement => ctx.body.querySelector(`#${id}`) as HTMLElement;
   const updated = liveIndicator(ctx, () => void metrics.refresh());
 
   let irisTotal: number | null = null;
   let lastSnap: Snapshot | null = null;
+  // Activity charts these figures, so read them every 20s while it is open.
+  metrics.setFast(true);
+  ctx.onLeave(() => metrics.setFast(false));
   ctx.onLeave(irisCpu.subscribe((c) => { irisTotal = c ? c.total : null; if (lastSnap) render(lastSnap); }));
 
+  const cpuTrend = (): number[] => { const h = metrics.history('iris_cpu_usage'); return inRange(h.values, h.times); };
   const render = (snap: Snapshot): void => {
     lastSnap = snap;
     const cpu = value(snap, 'iris_cpu_usage');
     const mem = value(snap, 'iris_phys_mem_percent_used');
     const page = value(snap, 'iris_page_space_percent_used');
     const smh = value(snap, 'iris_smh_total_percent_full');
-    setStat(ctx.body, 'cpu', { value: pct(cpu), caption: irisCaption(irisTotal), tone: band(cpu, 70, 90), trend: trendOf(snap, 'iris_cpu_usage'),
+    setStat(ctx.body, 'cpu', { value: pct(cpu), caption: irisCaption(irisTotal), tone: band(cpu, 70, 90), trend: cpuTrend(),
       title: 'System CPU covers everything on this machine. The IRIS figure adds up CPU used by IRIS processes over the last few seconds, measured against one core.' });
     setStat(ctx.body, 'mem', { value: pct(mem), caption: 'of RAM', tone: band(mem, 80, 92), fill: mem });
     setStat(ctx.body, 'page', { value: pct(page), caption: 'of allocated swap', tone: band(page, 70, 90), fill: page });
     setStat(ctx.body, 'smh', { value: pct(smh), caption: 'of instance heap', tone: band(smh, 80, 92), fill: smh });
 
-    setTile(ctx.body, 'sql', value(snap, 'iris_sql_queries_per_second', { id: 'all' }), metrics.trend('iris_sql_queries_per_second', { id: 'all' }));
-
-    // Volumes (databases share disks) and the databases on them, largest first.
-    const vols = new Map<string, { full: number; free: number }>();
-    for (const s of samples(snap, 'iris_disk_percent_full')) {
-      const vol = /^([a-z]:)/i.exec(s.labels.dir ?? '')?.[1]?.toUpperCase() ?? s.labels.dir;
-      if (!vols.has(vol)) vols.set(vol, { full: s.value, free: value(snap, 'iris_directory_space', { id: s.labels.id }) });
-    }
-    const dbs = samples(snap, 'iris_db_size_mb')
-      .map((s) => ({ id: s.labels.id, size: s.value, free: value(snap, 'iris_db_free_space', { id: s.labels.id }), max: value(snap, 'iris_db_max_size_mb', { id: s.labels.id }) }))
-      .sort((a, b) => b.size - a.size);
-    const jrn = `Journal files ${mb(value(snap, 'iris_jrn_size'))}`;
-    $('storage').innerHTML = `
-      ${[...vols].map(([vol, v]) => `<div class="volume">
-        <div class="row-line"><span class="row-main">${esc(vol)}</span><span class="row-meta">${pct(v.full)} used · ${mb(v.free)} free</span></div>
-        <div class="bar bar--${band(v.full, 85, 95)}"><span style="width:${Math.min(100, v.full)}%"></span></div>
-        <div class="volume-sub">${dbs.length} databases · ${jrn}</div></div>`).join('')}
-      <table class="mini-table">
-        <thead><tr><th>Database</th><th class="r" colspan="2" title="The bar shows each database's size relative to the largest one">Size</th><th class="r">Free in file</th></tr></thead>
-        <tbody>${dbs.map((d) => `<tr><td class="mono">${esc(d.id)}</td>
-          <td class="bar-col"><span class="sizebar" title="Size relative to the largest database, not how full it is"><span style="width:${(d.size / Math.max(1, dbs[0]?.size ?? 1)) * 100}%"></span></span></td>
-          <td class="r">${mb(d.size)}${d.max > 0 ? ` <span class="limit">/ ${mb(d.max)} limit</span>` : ''}</td>
-          <td class="r">${mb(d.free)}</td></tr>`).join('')}
-        </tbody>
-      </table>`;
+    const sql = metrics.history('iris_sql_queries_per_second', { id: 'all' });
+    setTile(ctx.body, 'sql', value(snap, 'iris_sql_queries_per_second', { id: 'all' }), inRange(sql.values, sql.times));
 
     const busy = samples(snap, 'iris_csp_in_use_connections').reduce((a, s) => a + s.value, 0);
     const conns = samples(snap, 'iris_csp_actual_connections').reduce((a, s) => a + s.value, 0);
     const open = value(snap, 'iris_trans_open_count');
-    const kv = (k: string, v: string, hint = ''): string => `<div class="kv-cell"${hint ? ` title="${esc(hint)}"` : ''}><dt>${k}</dt><dd>${v}</dd></div>`;
-    $('engine').innerHTML = `<dl class="kv-grid">
-      ${kv('Web sessions', compact(value(snap, 'iris_csp_sessions')))}
-      ${kv('Gateway connections', `${compact(busy)} <span class="dim">busy of</span> ${compact(conns)}`)}
-      ${kv('Gateway latency', `${(samples(snap, 'iris_csp_gateway_latency')[0]?.value ?? NaN).toFixed(1)} <span class="dim">ms</span>`)}
-      ${kv('Open transactions', open > 0 ? `${compact(open)} <span class="dim">· longest ${Math.round(value(snap, 'iris_trans_open_secs_max'))}s</span>` : 'None')}
-      ${kv('Cache efficiency', `${compact(value(snap, 'iris_cache_efficiency'))} <span class="dim">refs / disk I/O</span>`, 'Global references per physical read or write — higher is better')}
-      ${kv('Write daemon cycle', `${compact(value(snap, 'iris_wd_cycle_time'))} <span class="dim">ms</span>`)}
-      ${kv('ECP connections', compact(value(snap, 'iris_ecp_conn') + value(snap, 'iris_ecps_conn')))}
-      ${kv('SQL avg runtime', `${(value(snap, 'iris_sql_queries_avg_runtime') * 1000).toFixed(1)} <span class="dim">ms</span>`)}
-    </dl>`;
+    ctx.body.querySelector('.ops-engine-err')?.remove();
+    const cell = (key: string, v: string, note = ''): void => {
+      const el = ctx.body.querySelector(`[data-engine="${key}"]`) as HTMLElement;
+      (el.querySelector('.v') as HTMLElement).textContent = v;
+      (el.querySelector('.ops-metric-note') as HTMLElement).textContent = note;
+    };
+    cell('sessions', fig(value(snap, 'iris_csp_sessions')), 'open now');
+    cell('gateway', fig(busy), Number.isFinite(conns) ? `busy of ${fig(conns)} open` : '');
+    cell('latency', ms(samples(snap, 'iris_csp_gateway_latency')[0]?.value ?? NaN), 'gateway round trip');
+    cell('txn', fig(open), open > 0 ? `longest ${duration(Math.max(60, Math.floor(value(snap, 'iris_trans_open_secs_max') / 60) * 60))}` : 'none open');
+    cell('cache', fig(value(snap, 'iris_cache_efficiency')), 'refs per disk I/O');
+    cell('wd', fig(value(snap, 'iris_wd_cycle_time')), 'last write to disk');
+    cell('ecp', fig(value(snap, 'iris_ecp_conn') + value(snap, 'iris_ecps_conn')), 'as client and server');
+    cell('sqlrt', ms(value(snap, 'iris_sql_queries_avg_runtime') * 1000), 'per statement');
   };
 
-  // The portal's own monitoring load, measured (not assumed) and shown where it matters.
-  let own: Rates | null = null;
-  const measure = async (): Promise<void> => { own = await observerCost(METRICS_POLL_MS / 1000); };
+  /*
+   * "Exclude portal monitoring" (off by default). Each throughput reading is a
+   * counter delta over usage's 20 s window, so the portal's share is counted in
+   * that same window: every read this page makes (metrics scrapes, counter
+   * reads, process lists, and the cost measurement itself) is logged with its
+   * time, and each read's cost is measured, not assumed. Reads the page can't
+   * see (other tabs, the status bar's security and dashboard reads) stay in.
+   */
+  const events: Array<{ kind: PortalRead; at: number }> = [];
+  const log = (kind: PortalRead, at = Date.now()): void => {
+    events.push({ kind, at });
+    while (events.length && events[0].at < at - 60_000) events.shift();
+  };
+  let costs: ReadCosts | null = null;
+  const measure = async (): Promise<void> => {
+    try { costs = minCosts(costs, await measureReadCosts(log)); } catch { /* keep the last measurement */ }
+  };
   void measure();
-  const measureTimer = setInterval(() => void measure(), 120000);
+  const measureTimer = setInterval(() => void measure(), 300_000);
   ctx.onLeave(() => clearInterval(measureTimer));
 
-  ctx.onLeave(usage.subscribe((r) => {
+  let exclude = false;
+  /** usage's sample times on this visit, trimmed exactly as usage trims its window. */
+  const times: number[] = [];
+  /** Per figure, whether the latest reading could have the portal's share taken out ("≈"). */
+  const approx = new Map<RateKey, boolean>();
+  let share: Partial<Record<RateKey, number>> = {};
+  let lastRates: Rates | null = null;
+  const paintRates = (): void => {
+    const r = lastRates;
+    if (!r) return;
     for (const t of THROUGHPUT) {
       if (t.key === 'sql') continue;
-      setTile(ctx.body, t.key, r[t.key], usage.trend(t.key));
-      const note = ctx.body.querySelector(`[data-metric="${t.key}"] .metric-own`) as HTMLElement;
-      const mine = own ? own[t.key] : 0;
-      // Only call it out when the portal is a meaningful share of the figure.
-      // The note line is always reserved (so values align); it is just empty when not needed.
-      const show = mine >= 1 && mine >= r[t.key] * 0.1;
-      note.textContent = '';
-      if (show) note.textContent = mine >= r[t.key] * 0.9
-        ? 'Nearly all from this portal’s own monitoring'
-        : `≈${compact(mine)}/s from this portal’s monitoring`;
+      const k = t.key;
+      const adj = adjusted.get(k) ?? [];
+      const on = exclude && !!costs && adj.length > 0;
+      const h = usage.history(k);
+      const series = on ? inRange(adj.map((x) => x.v), adj.map((x) => x.t)) : inRange(h.values, h.times);
+      const ok = on && approx.get(k) === true;
+      setTile(ctx.body, k, on ? adj[adj.length - 1].v : r[k], series, ok ? '≈ ' : '');
+      const mine = share[k] ?? 0;
+      (ctx.body.querySelector(`[data-metric="${k}"]`) as HTMLElement).title = !costs || mine < 1 ? t.hint
+        : on && !ok ? `${t.hint}. This portal’s share couldn’t be separated from this reading, so it is shown as IRIS counts it.`
+          : `${t.hint}. This portal’s own reads account for about ${compact(mine)}/s of this reading${on ? ', left out here' : ''}.`;
     }
+  };
+  const toggle = ctx.actions.querySelector('#own-toggle') as HTMLElement & { checked: boolean };
+  toggle.addEventListener('ev-toggle-change', () => { exclude = !!toggle.checked; paintRates(); });
+  // The label sits left of the switch (outside it), so clicking the words flips it too.
+  ctx.actions.querySelector('#own-label')?.addEventListener('click', () => { toggle.checked = !toggle.checked; exclude = toggle.checked; paintRates(); });
+
+  // Subscriptions deliver a cached value synchronously; only later calls are real reads.
+  let syncing = true;
+  times.push(Date.now());
+  log('usage');
+  ctx.onLeave(usage.subscribe((r) => {
+    lastRates = r;
+    if (!syncing) {
+      const t = Date.now();
+      log('usage', t);
+      times.push(t);
+      while (times.length > 2 && t - times[1] >= 20_000) times.shift();
+      const p = costs ? portalRate(events, costs, times[0], t) : null;
+      share = p ?? {};
+      for (const th of THROUGHPUT) {
+        if (th.key === 'sql') continue;
+        const k = th.key;
+        const a = p ? r[k] - p[k] : NaN;
+        // A reading at or below the portal's own share means the attribution missed for this window: show it as counted.
+        const good = r[k] <= 0 ? true : a >= 0.5; // never "≈ 0" while IRIS counts activity
+        approx.set(k, !!p && good);
+        const list = adjusted.get(k) ?? [];
+        list.push({ v: p && good ? Math.max(0, a) : r[k], t });
+        if (list.length > ADJ_MAX) list.shift();
+        adjusted.set(k, list);
+      }
+    }
+    paintRates();
   }));
-  ctx.onLeave(metrics.subscribe((snap, at) => { updated(at); render(snap); }, (err) => {
-    $('storage').innerHTML = errorPanel(err, 'retry-ops');
-    $('storage').querySelector('#retry-ops')?.addEventListener('click', () => void metrics.refresh());
+  ctx.onLeave(irisCpu.subscribe(() => { if (!syncing) log('proc'); }));
+  // Shared memory by subsystem: read with the page's own refresh (each metrics reading), never faster.
+  let shmBusy = false;
+  const loadShm = async (): Promise<void> => {
+    if (shmBusy) return;
+    shmBusy = true;
+    try { renderShm(ctx.body, await getSharedMemory()); } catch (err) {
+      const el = ctx.body.querySelector('#shm');
+      if (el && !el.querySelector('.shm-bar')) el.innerHTML = errorPanel(err);
+    } finally { shmBusy = false; }
+  };
+  void loadShm();
+  ctx.onLeave(metrics.subscribe((snap, at) => { if (!syncing) { log('scrape', at.getTime()); void loadShm(); } updated(at); render(snap); }, (err) => {
+    ctx.body.querySelector('.ops-engine-err')?.remove();
+    $('engine').insertAdjacentHTML('afterend', `<div class="ops-engine-err">${errorPanel(err, 'retry-ops')}</div>`);
+    ctx.body.querySelector('#retry-ops')?.addEventListener('click', () => void metrics.refresh());
   }));
+  syncing = false;
 }

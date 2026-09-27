@@ -1,0 +1,143 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Operations › Locks, Web sessions, Background jobs — only what styles.css, styles-security.css and styles-crud.css have no class for. Tokens only. */
+
+/* The standard empty state, over the (hidden) grid. */
+.ops-wrap { position: relative; }
+.ops-empty { position: relative; }
+
+/* A long lock name in the panel head wraps instead of stretching the panel. */
+.ops-wrap-name { overflow-wrap: anywhere; }
+
+/* Rows of "who · state" in the panel: waiters, holders, other locks. */
+.ops-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.ops-list li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 5px var(--portal-pad); font-size: 12.5px;
+}
+.ops-list li > span:first-child { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.ops-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--ev-font-family-mono, monospace); font-size: 11.5px; color: var(--portal-muted); }
+.ops-ref { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.ops-meta { white-space: nowrap; }
+
+/* A callout inside the detail panel. */
+.detail .ops-callout { margin: 12px var(--portal-pad) 0; }
+
+/* Job progress: a fixed-height bar, so nothing moves as it fills. */
+.ops-progress {
+  height: 8px; margin: 8px var(--portal-pad) 0; border-radius: var(--ev-radius-full, 999px); overflow: hidden;
+  background: var(--ev-surface-inset, var(--ev-neutral-2));
+}
+.ops-progress > span { display: block; height: 100%; background: var(--ev-color-primary); transition: width 0.3s ease; }
+.ops-progress-text { font-variant-numeric: tabular-nums; }
+
+/* Job output (e.g. the integrity check report). */
+.ops-console {
+  margin: 6px var(--portal-pad) 0; max-height: 40vh; overflow: auto; padding: 10px 12px;
+  font-family: var(--ev-font-family-mono, monospace); font-size: 11.5px; line-height: 1.5; white-space: pre;
+  color: var(--ev-color-text-primary); background: var(--ev-surface-inset, var(--ev-surface-2));
+  border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px);
+}
+.ops-console:focus-visible { outline: 2px solid var(--ev-color-primary); outline-offset: 1px; }
+.ops-console + .detail-actions { margin-top: 8px; }
+
+
+/* ── Home: the triage page ── */
+.home-stats .stat { min-height: 88px; }
+/* Row 2: Needs attention (3) and Coming up (2); the grid row gives them equal, natural height. */
+.home-triage { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--portal-gap); align-items: stretch; }
+.home-card { display: flex; flex-direction: column; min-height: 0; }
+.home-card-body { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.home-issues, .home-runs { list-style: none; margin: 0; padding: 0; }
+.home-issue {
+  display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; column-gap: 12px;
+  min-height: 52px; padding: 8px var(--portal-pad); border-top: 1px solid var(--ev-border-1);
+  transition: background-color 0.6s ease;
+}
+.home-issue:first-child { border-top: 0; }
+.home-issue--hl { background: var(--ev-state-selected-bg); }
+.home-issue-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ev-color-info); }
+.home-issue[data-tone="warning"] .home-issue-dot { background: var(--ev-color-warning); }
+.home-issue[data-tone="danger"] .home-issue-dot { background: var(--ev-color-danger); }
+.home-issue-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.home-issue-text strong { font-size: 13px; font-weight: 500; color: var(--ev-color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-issue-text span { font-size: 12.5px; color: var(--ev-color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-issue-act { height: 26px; min-width: 88px; justify-content: center; }
+/* Card footers: always present and the same height, so both cards' footers share a baseline. */
+.home-foot { flex: 0 0 auto; display: flex; align-items: center; height: 36px; margin-top: auto; padding: 0 var(--portal-pad); border-top: 1px solid var(--ev-border-1); }
+/* All clear / nothing scheduled: centred in the card, so a tall card never looks empty-topped. */
+.home-clear { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 24px var(--portal-pad) 40px; text-align: center; }
+.home-clear-icon {
+  display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 10px; border-radius: 10px;
+  background: var(--ev-surface-1); border: 1px solid var(--ev-border-1); color: var(--ev-color-success);
+}
+.home-clear--neutral .home-clear-icon { color: var(--ev-color-text-secondary); }
+.home-clear strong { font-size: 14px; font-weight: 600; color: var(--ev-color-text-primary); }
+.home-clear > span:last-child { font-size: 12.5px; color: var(--ev-color-text-secondary); }
+.home-run {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 16px;
+  min-height: 36px; padding: 0 var(--portal-pad); border-top: 1px solid var(--ev-border-1); font-size: 13px;
+}
+.home-run:first-child { border-top: 0; }
+.home-run-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ev-color-text-primary); }
+.home-run-when { font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Below the fold: top processes beside the instance's own figures. */
+.home-below { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--portal-gap); align-items: stretch; }
+.home-below--one { grid-template-columns: minmax(0, 1fr); }
+.home-below--one .kv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.home-below--one .kv-cell:nth-child(-n+3) { border-top: 0; }
+.home-below--one .kv-cell:nth-child(odd) { border-right: 0; }
+.home-below--one .kv-cell:not(:nth-child(3n)) { border-right: 1px solid var(--ev-border-1); }
+@media (max-width: 1180px) { .home-triage, .home-below { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── Activity: the page's view controls in the header (Exclude portal monitoring, 15m / 1h) ── */
+.ops-head-opts { display: flex; align-items: center; gap: 16px; }
+/* Activity › Sessions & engine: Throughput's cell without the trend; the note line carries the context ("busy of 12 open"). */
+.metric .ops-metric-note { grid-area: note; min-width: 0; font-size: 11.5px; line-height: 16px; color: var(--ev-color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* ECP empty state: the in-app action is a 28px secondary button beside "Learn more". */
+.btn.ops-btn-28 { height: 28px; }
+/* Activity › Throughput: label left, current value top right, a 28px trend across the cell. */
+.ops-tp-grid .ops-tp {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label value" "spark spark"; row-gap: 8px; column-gap: 12px; align-items: baseline;
+  padding: 12px var(--portal-pad) 12px; border-right: 1px solid var(--ev-border-1); border-bottom: 1px solid var(--ev-border-1); min-width: 0;
+}
+.ops-tp-grid .ops-tp:nth-child(4n) { border-right: 0; }
+.ops-tp-grid .ops-tp:nth-last-child(-n+4) { border-bottom: 0; }
+.ops-tp .metric-label { grid-area: label; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-tp-value { grid-area: value; display: inline-flex; align-items: baseline; gap: 0; font-size: 15px; font-weight: 600; color: var(--ev-color-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ops-tp-value .unit { margin-left: 1px; font-size: 12px; font-weight: 500; color: var(--portal-faint); }
+.ops-tp-spark { grid-area: spark; width: 100%; height: 28px; }
+
+/* ── Web sessions: an application's sessions (peek and full view) ── */
+.ws-sessions { list-style: none; margin: 0; padding: 0; }
+.ws-session {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 72px 56px; align-items: center; column-gap: 12px;
+  min-height: 32px; padding: 0 var(--portal-pad); border-top: 1px solid var(--ev-border-1); font-size: 12.5px;
+}
+.ws-session:first-child { border-top: 0; }
+.ws-session-id, .ws-session-user { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-session-exp { text-align: right; color: var(--ev-color-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ws-session-end { justify-self: end; }
+.ws-session .btn--sm { height: 26px; }
+.ws-note { margin: 8px var(--portal-pad) 4px; font-size: 12.5px; line-height: 1.45; color: var(--ev-color-text-secondary); }
+
+/* Activity header: "Exclude portal monitoring" as a switch (the library's default size: its thumb travel is fixed), label on the left. */
+.ops-switch { display: inline-flex; align-items: center; gap: 8px; height: 28px; font-size: 12.5px; color: var(--ev-color-text-secondary); white-space: nowrap; }
+.ops-switch-label { cursor: pointer; user-select: none; }
+/* A throughput trend with too few readings yet: muted text where the line will be, same height. */
+.ops-collecting { display: flex; align-items: center; height: 28px; font-size: 11.5px; color: var(--ev-color-text-tertiary); }
+
+/* Activity › Shared memory: one stacked bar (biggest users), then a small table. */
+.shm-bar { display: flex; height: 10px; margin: 12px var(--portal-pad) 4px; overflow: hidden; border-radius: var(--ev-radius-full, 999px); background: var(--ev-surface-1); gap: 1px; }
+.shm-bar > span { display: block; min-width: 2px; }
+.shm-key { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 2px; vertical-align: 0; }
+.shm-table { margin-bottom: 4px; }
+
+/* Journals › Records: the file list and the record browser each fill the page in turn. */
+.jrn-main, .jrn-rec, .jrn-rec-list { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; }
+.jrn-main[hidden], .jrn-rec[hidden], .jrn-rec-list[hidden] { display: none; }
+.jrn-rec-pid { width: 120px; }
+.jrn-rec-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.jrn-rec-foot .table-foot { margin: 0; }
+/* A record's old and new value: masked until the eye is pressed; revealed values wrap in mono. */
+.jr-values { display: flex; flex-direction: column; }
+.jr-value { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 20px; color: var(--ev-color-text-primary); }

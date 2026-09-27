@@ -1,0 +1,162 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Operations › Journals: the file panel and the record browser. */
+
+/* File peek: the Integrity section's button, then the note and the last result under it. */
+#jrn-detail .jrn-check-actions { margin: 4px var(--portal-pad) 0; }
+#jrn-detail .detail-actions + .detail-note,
+#jrn-detail .detail-actions + .jrn-check { margin-top: 8px; }
+#jrn-detail .detail-note + .jrn-check { margin-top: 4px; }
+#jrn-detail .disk-list, #jrn-detail .disk-none { margin-top: 0; }
+
+/*
+ * Record browser. Past 200 rows ev-data-grid windows its rows and scrolls itself, capped at 600px
+ * unless sized: then the workspace fills the page and the grid fills the workspace (shorter lists
+ * hug their rows, like every other list).
+ */
+#jrn-rec-panel:has(ev-data-grid[virtualized]) { flex: 1 1 0; }
+#jrn-rec-wrap:has(> ev-data-grid[virtualized]) { height: 100%; max-height: none; overflow: hidden; }
+#jrn-rec-wrap > ev-data-grid[virtualized] { box-sizing: border-box; height: 100%; max-height: none; }
+
+/* Record peek and full view: old and new value side by side, each masked until its eye is pressed;
+   a revealed value is mono, left-aligned under its label, and wraps. */
+.jr-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 4px var(--portal-pad) 0; }
+.od-card-body > .jr-diff { margin: 8px var(--portal-pad) 4px; }
+.jr-diff-side { min-width: 0; border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-md, 6px); background: var(--ev-surface-1, transparent); }
+.jr-diff-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; padding: 0 4px 0 10px; border-bottom: 1px solid var(--ev-border-1); font-size: 12px; color: var(--ev-color-text-secondary); }
+.jr-diff-val { min-height: 20px; max-height: 240px; overflow: auto; padding: 6px 10px 8px; font-family: var(--ev-font-family-mono, monospace); font-size: 12.5px; line-height: 20px; }
+.jr-diff .jr-value { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ev-color-text-primary); }
+
+/* Settings form: the "What changes" list and its warnings (inside the pinned summary). */
+.jrn-preview { display: flex; flex-direction: column; gap: 8px; }
+.jrn-preview ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; color: var(--ev-color-text-primary); overflow-wrap: anywhere; }
+.jrn-preview-none { margin: 0; font-size: 12.5px; color: var(--portal-muted); }
+
+/* Paths in the file panel (databases, neighbours): room for descenders and underscores in 12px mono. */
+#jrn-detail .link.mono, #jrn-rec-detail .link.mono, #jrn-rec-full .link.mono {
+  display: block; max-width: 100%; height: auto; padding: 1px 0 2px; line-height: 18px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
+}
+#jrn-detail .od-kv .link.mono, #jrn-rec-detail .od-kv .link.mono, #jrn-rec-full .od-kv .link.mono { display: inline-block; vertical-align: bottom; }
+
+/* The file crumb in a record's full view: the file name is mono, as on the list's own heading. */
+#page-title .od-crumb--mono { font-family: var(--ev-font-family-mono); font-size: 19px; }
+
+/* The Directory cell's switch link: caption-sized, on the caption line. */
+.jrn-cell-cap .jrn-cell-link { font-size: 11px; line-height: 14px; height: auto; padding: 0; }
+
+/* The summary strip's text lines up with the table's first column (grid cells pad 8px). */
+#jrn-facts .jrn-cell:first-child { padding-left: 9px; }
+@media (max-width: 900px) { #jrn-facts .jrn-cell { padding-left: 9px; } }
+
+/* Journal data over time: one bar per file, as wide as the time it was written to. */
+.jrn-volume { flex: none; }
+.jrn-vol-note { font-size: 12px; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.jrn-vol { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; padding: 12px var(--portal-pad) 26px; }
+/* The y labels sit centred on their lines (top, middle, baseline); a hidden copy of the widest sets the width. */
+.jrn-vol-y { position: relative; height: 96px; font-size: 11px; line-height: 12px; color: var(--portal-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.jrn-vol-y > span { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+.jrn-vol-y > .jrn-vol-y-size { position: static; display: block; transform: none; visibility: hidden; height: 0; overflow: hidden; }
+.jrn-vol-plot { position: relative; height: 96px; border-bottom: 1px solid var(--ev-border-2); }
+.jrn-vol-grid { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--ev-border-1); }
+/* The hover card beside a bar. */
+.jrn-vol-tip {
+  position: absolute; top: 0; z-index: 2; display: flex; flex-direction: column; gap: 1px; min-width: 150px; max-width: 260px;
+  padding: 6px 10px; border: 1px solid var(--ev-border-2); border-radius: var(--ev-radius-md, 6px);
+  background: var(--ev-surface-3, var(--ev-surface-2)); box-shadow: var(--ev-shadow-md, 0 4px 12px rgb(0 0 0 / 0.18));
+  font-size: 12px; line-height: 16px; color: var(--ev-color-text-primary); pointer-events: none; white-space: nowrap;
+}
+.jrn-vol-tip[hidden] { display: none; }
+.jrn-vol-tip .mono { font-family: var(--ev-font-family-mono, monospace); font-weight: 600; }
+.jrn-vol-tip-dim { color: var(--ev-color-text-secondary); }
+.jrn-vol-day { position: absolute; top: 0; bottom: -6px; border-left: 1px solid var(--ev-border-1); }
+.jrn-vol-day b { position: absolute; top: calc(100% + 4px); left: 0; transform: translateX(-50%); font-size: 11px; font-weight: 400; line-height: 12px; color: var(--portal-muted); white-space: nowrap; }
+.jrn-vol-bars { position: absolute; inset: 0; }
+.jrn-vol-bar {
+  position: absolute; bottom: 0; padding: 0; border: 0; border-radius: 4px 4px 0 0; cursor: pointer;
+  background: color-mix(in srgb, var(--ev-accent-9, var(--ev-color-primary)) 70%, transparent);
+}
+.jrn-vol-bar:hover, .jrn-vol-bar[aria-pressed="true"] { background: var(--ev-accent-9, var(--ev-color-primary)); }
+.jrn-vol-bar:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; }
+
+/* Record browser: the frame fills the page in every state, so the footer never moves; an empty,
+   loading or error state sits inside the frame, under the grid's header. */
+#jrn-rec-panel { flex: 1 1 0; }
+#jrn-rec-wrap { height: 100%; max-height: none; }
+#jrn-rec-wrap.jrn-rec-wrap--over { overflow: hidden; }
+.jrn-rec-over { position: absolute; left: 0; right: 0; top: var(--jrn-grid-head, 33px); bottom: 0; display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: var(--ev-surface-2); }
+.jrn-rec-over > .skeleton-list { align-self: flex-start; width: 100%; }
+/* The footer keeps the height of its buttons when none shows (Stop and Load more come and go). */
+.jrn-rec-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 26px; }
+.jrn-rec-foot-actions { display: inline-flex; gap: 8px; }
+/* The Process ID box: as tall as the search box and the operation buttons beside it. */
+#jrn-rec-pid { --ev-control-height: 28px; }
+
+/* Full record view: other changes to the same global. */
+.jr-same { list-style: none; margin: 0; padding: 0; }
+.jr-same li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4px 12px; font-size: 12.5px; }
+.jr-same li + li { border-top: 1px solid var(--ev-border-1); }
+.jr-same li > :first-child { min-width: 0; flex: 1 1 auto; }
+.jr-same li > span { flex: none; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+#jrn-rec-detail .jr-same li { padding: 4px var(--portal-pad); }
+.jr-same-note { margin: 4px var(--portal-pad) 0; font-size: 12px; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.jr-card-note { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+
+/* Settings form: an edited field gets a thin accent mark at its left edge (nothing moves). */
+#jrn-detail .crud-editor-body [data-field] { position: relative; }
+#jrn-detail .crud-editor-body [data-field][data-jrn-changed]::before {
+  content: ''; position: absolute; left: -9px; top: 2px; bottom: 2px; width: 2px; border-radius: 1px;
+  background: var(--ev-accent-9, var(--ev-color-primary));
+}
+#jrn-detail .crud-editor-body ev-form-field[data-field] { display: block; }
+
+/* "What changes": opened from the footer's change count, pinned just above the buttons. */
+.jrn-sum {
+  position: sticky; bottom: var(--jrn-foot-h, 49px); z-index: 1;
+  background: var(--ev-surface-2); border-top: 1px solid var(--ev-border-1);
+}
+.jrn-sum > .jrn-preview { max-height: 40vh; overflow: auto; padding: 10px var(--portal-pad) 12px; }
+/* The footer's one status line: "2 changes · 1 warning · 1 to fix". Neutral unless something is wrong. */
+#jrn-detail .crud-foot-hint { color: var(--ev-color-text-secondary); }
+#jrn-detail .crud-foot-hint .jrn-sum-warn { color: var(--ev-color-warning); }
+#jrn-detail .crud-foot-hint .jrn-sum-bad { color: var(--ev-color-danger); }
+
+/* A value the journal doesn't hold: said in words (sans), not shown as a value. */
+.jr-diff-val .jr-absent { font-family: var(--ev-font-family); font-size: 12.5px; color: var(--ev-color-text-secondary); }
+.jr-diff-val .jr-absent-why { display: block; margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--portal-muted); }
+
+/* Global nodes are cut in the middle (see midNode) and may take two lines: the peek title, the full
+   view's heading, and the whole node where the title had to cut it. */
+#jrn-rec-detail .od-title--mono { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#page-title .od-crumb-here.jr-crumb-node { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+.jr-node-full { white-space: normal; overflow-wrap: anywhere; }
+
+/* Other changes: the node by what differs from this one; a fold's records by time, then address. */
+.jr-same .jr-same-node { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Other changes: the address (or span of addresses) first, then what differs, then operation and time. */
+.jr-same li:has(> .jr-same-addr) { justify-content: flex-start; }
+.jr-same li > .jr-same-addr { flex: none; min-width: 0; }
+.jr-same li > .jr-same-what { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ev-color-text-secondary); font-variant-numeric: normal; }
+.jr-same li > .jr-same-what.mono { font-family: var(--ev-font-family-mono, monospace); color: var(--ev-color-text-primary); }
+.jr-same li:has(> .jr-same-addr) > span:last-child { margin-left: auto; }
+/* Repeats: one line (count, time, addresses) with "Show all"; the list opens under it. */
+.jr-fold-line { display: flex; align-items: baseline; gap: 12px; margin: 4px var(--portal-pad) 4px; font-size: 12.5px; line-height: 20px; color: var(--ev-color-text-primary); font-variant-numeric: tabular-nums; }
+.jr-fold-line > span { flex: 1 1 auto; min-width: 0; }
+.jr-fold-line > .link { flex: none; font-size: 12.5px; height: auto; padding: 0; }
+.jr-fold-all { margin-top: 4px; border-top: 1px solid var(--ev-border-1); }
+.jr-fold-all[hidden] { display: none; }
+.jr-same .jr-fold-time { flex: none; order: -1; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.jr-same li:has(> .jr-fold-time) { justify-content: flex-start; }
+.jr-same li:has(> .jr-fold-time) > button { flex: 0 1 auto; }
+
+/* File list with a file's panel open: the panel fills the page (its header sticks, its body scrolls) and the
+   list's frame runs down with it, so the two end together. Closed, a short list hugs its rows. */
+#jrn-panel[open] { flex: 1 1 0; min-height: 180px; }
+#jrn-panel[open] > #jrn-wrap { height: 100%; max-height: none; box-sizing: border-box; }
+
+/* Full record view: the records either side, a link that gives way before its operation and time. */
+#jrn-rec-full .jr-near { display: inline-flex; align-items: baseline; gap: 6px; max-width: 100%; min-width: 0; vertical-align: bottom; }
+#jrn-rec-full .jr-near > .dim { flex: none; white-space: nowrap; }
+#jrn-rec-full .od-kv .jr-near > .link.jr-near-node { display: block; flex: 0 1 auto; min-width: 0; max-width: none; height: auto; padding: 1px 0 2px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Journal settings open: the chart steps aside so the form (an instance-wide edit) gets the page's height. */
+.jrn-main--editing > #jrn-volume { display: none; }

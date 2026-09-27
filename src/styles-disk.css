@@ -1,0 +1,141 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Databases › Capacity and Operations › Journals — only what the shared sheets have no class for. */
+
+/* At-a-glance box: volume tiles (Capacity) or journal facts (Journals), then the model line. */
+.disk-summary { flex: 0 0 auto; background: var(--ev-surface-2); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-lg, 8px); overflow: hidden; }
+
+/* Volume cells: ~56px, no inner box. Line 1 (a button) filters the grid: name, bar with 85/95% ticks, % full.
+   Line 2: free space and what shares it, with links. Cells split by border-left only. */
+.disk-vols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.disk-vols > .skeleton-list, .disk-vols-empty { grid-column: 1 / -1; padding: 8px 16px; }
+.disk-vols-empty { margin: 0; font-size: 12.5px; color: var(--portal-faint); }
+.disk-vol { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; min-height: 56px; box-sizing: border-box; padding: 8px 16px; border-left: 1px solid var(--ev-border-1); }
+.disk-vol:first-child { border-left: 0; }
+/* More than three drives (set by Capacity): an even grid, three across (two for four drives), so every
+   bar and its 85/95% ticks line up in columns; a spare cell holds the summary. */
+.disk-vols[data-rows] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.disk-vols[data-rows="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.disk-vols[data-rows] > .disk-vol { grid-column: auto; }
+.disk-vols[data-rows="3"] > .disk-vol:nth-child(3n+1) { border-left: 0; }
+.disk-vols[data-rows="3"] > .disk-vol:nth-child(n+4) { border-top: 1px solid var(--ev-border-1); }
+.disk-vols[data-rows="2"] > .disk-vol:nth-child(2n+1) { border-left: 0; }
+.disk-vols[data-rows="2"] > .disk-vol:nth-child(n+3) { border-top: 1px solid var(--ev-border-1); }
+/* The 85%/95% labels once, on the first row; later rows keep the space so bars stay aligned. */
+.disk-vols[data-rows="3"] > .disk-vol:nth-child(n+4) .disk-tick-label,
+.disk-vols[data-rows="2"] > .disk-vol:nth-child(n+3) .disk-tick-label { visibility: hidden; }
+.disk-vol--sum { justify-content: center; gap: 2px; }
+.disk-vol--sum .k { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.disk-vol--sum .s { font-size: 11px; color: var(--portal-muted); }
+@media (max-width: 1100px) {
+  .disk-vols[data-rows], .disk-vols[data-rows="2"] { grid-template-columns: 1fr; }
+  .disk-vols[data-rows] > .disk-vol { border-left: 0; }
+  .disk-vols[data-rows] > .disk-vol + .disk-vol { border-top: 1px solid var(--ev-border-1); }
+  .disk-vols[data-rows] > .disk-vol + .disk-vol .disk-tick-label { visibility: hidden; }
+}
+.disk-vol-main {
+  display: flex; align-items: flex-end; gap: 12px; min-width: 0; margin: -2px -6px; padding: 2px 6px;
+  font: inherit; text-align: left; color: inherit; background: transparent; cursor: pointer; border: 0; border-radius: var(--ev-radius-sm, 4px);
+}
+.disk-vol-main:hover { background: var(--ev-state-hover-bg); }
+.disk-vol-main:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 0; }
+.disk-vol-main[aria-pressed="true"] { background: var(--ev-state-hover-bg); box-shadow: inset 0 -2px 0 var(--ev-accent-9, var(--ev-color-primary)); }
+.disk-vol-name { flex: 0 0 auto; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; color: var(--ev-color-text-primary); }
+/* Name and role in a fixed-width column, so every bar starts at the same x. */
+.disk-vol-id   { flex: 0 0 120px; display: flex; flex-direction: column; min-width: 0; align-self: center; }
+.disk-vol-name { max-width: none; font-size: 15px; line-height: 18px; }
+.disk-vol-role { font-size: 11px; line-height: 14px; color: var(--portal-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Live numbers sit in fixed boxes so nothing moves as they tick. */
+.disk-vol-pct { flex: 0 0 auto; min-width: 8ch; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ev-color-text-primary); }
+.disk-vol[data-tone="danger"] .disk-vol-pct { color: var(--ev-color-danger); }
+/* The bar with tick marks at the warning (85%) and critical (95%) lines. */
+/* Labels sit 4px above the bar (10px text), so they never meet the caption line below it. */
+.disk-bar { position: relative; display: block; flex: 1 1 auto; min-width: 80px; padding: 14px 0 4px; }
+.disk-tick-label { position: absolute; top: 0; transform: translateX(-50%); font-size: 10px; line-height: 10px; color: var(--portal-muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+.disk-bar .bar { display: block; width: 100%; height: 6px; }
+.disk-bar .bar > span { display: block; height: 100%; }
+.disk-tick { position: absolute; top: 12px; bottom: 2px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--portal-muted); opacity: 0.7; }
+.disk-tick--crit { background: var(--ev-color-danger); }
+/* Quiet marks; the one that matters lights up when the drive reaches it. */
+.disk-tick       { width: 1px; margin-left: 0; top: 12px; bottom: 0; opacity: .55; background: var(--ev-color-text-tertiary); }
+.disk-tick--crit { background: var(--ev-color-danger); opacity: .45; }
+.disk-vol[data-tone="warning"] .disk-tick:not(.disk-tick--crit),
+.disk-vol[data-tone="danger"]  .disk-tick--crit { opacity: 1; }
+.disk-vol[data-tone="warning"] .disk-vol-pct { color: var(--ev-color-warning); }
+.disk-vol-holds { min-width: 0; font-size: 11px; line-height: 1.4; color: var(--portal-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disk-link { color: var(--ev-accent-11, var(--ev-accent)); text-decoration: none; font-weight: 500; }
+.disk-link:hover { text-decoration: underline; }
+.disk-link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; border-radius: 2px; }
+
+/* "Only C:  Show every volume" beside the filters. */
+.disk-scope { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; color: var(--portal-muted); }
+.disk-scope .link { margin: 0; }
+
+/* The standard empty state, over the (hidden) grid. */
+.disk-empty { position: relative; }
+
+/* Explanatory text and short lists in the detail panel. */
+.disk-text { margin: 2px 0 0; padding: 0 var(--portal-pad) 2px; font-size: 12.5px; line-height: 1.5; color: var(--portal-muted); }
+.disk-text b { font-weight: 600; color: var(--ev-color-text-primary); font-variant-numeric: tabular-nums; }
+.disk-text .btn { margin-left: 4px; text-decoration: none; }
+.disk-list { list-style: none; margin: 0; padding: 2px 0 4px; }
+.disk-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px var(--portal-pad); font-size: 12.5px; }
+.disk-list li > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disk-list li > :last-child { flex-shrink: 0; color: var(--portal-muted); font-variant-numeric: tabular-nums; }
+.disk-list .link { margin: 0; padding: 0; }
+.disk-none { margin: 2px var(--portal-pad) 6px; font-size: 12.5px; color: var(--portal-faint); }
+.detail .sec-callout { margin-top: 12px; }
+
+/* Journals: three cells, a value and one caption each, split by border-left; ~60px. */
+.jrn-cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.jrn-cell { display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; min-height: 48px; box-sizing: border-box; padding: 6px 16px; border-left: 1px solid var(--ev-border-1); }
+.jrn-cell:first-child { border-left: 0; }
+.jrn-cell-label { font-size: 11px; line-height: 14px; color: var(--portal-muted); }
+.jrn-cell-value { line-height: 18px; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 15px; font-weight: 600; color: var(--ev-color-text-primary); font-variant-numeric: tabular-nums; }
+.jrn-cell-value > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jrn-cell-cap { min-width: 0; font-size: 11px; line-height: 14px; color: var(--portal-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.jrn-cell-cap .mono { font-size: 11px; }
+.jrn-fact-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--ev-border-2); }
+.jrn-cell[data-tone="success"] .jrn-fact-dot { background: var(--ev-color-success); }
+.jrn-cell[data-tone="warning"] .jrn-fact-dot { background: var(--ev-color-warning); }
+.jrn-cell[data-tone="danger"] .jrn-fact-dot { background: var(--ev-color-danger); }
+.jrn-warn { color: var(--ev-color-warning); }
+@media (max-width: 900px) {
+  .jrn-cells { grid-template-columns: minmax(0, 1fr); }
+  .jrn-cell { border-left: 0; border-top: 1px solid var(--ev-border-1); }
+  .jrn-cell:first-child { border-top: 0; }
+}
+
+/* One-line notice (design v2): icon, headline, one link; details on hover. */
+.sec-banner.disk-notice { min-height: 36px; box-sizing: border-box; padding: 6px 12px; font-size: 13px; }
+.disk-notice strong { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disk-notice > div { min-width: 0; }
+.disk-notice > .link, .disk-notice > .disk-link { flex: 0 0 auto; margin: 0; font-size: 12.5px; }
+.disk-notice-more { font-weight: 400; color: var(--portal-muted); }
+
+/* Integrity check result line in the journal file panel (fixed height, so the panel doesn't jump). */
+.jrn-check { display: flex; align-items: center; gap: 8px; min-height: 22px; margin: 8px var(--portal-pad) 0; font-size: 12.5px; color: var(--portal-muted); }
+.jrn-check[data-tone="success"] { color: var(--ev-color-success); }
+.jrn-check[data-tone="danger"] { color: var(--ev-color-danger); }
+.jrn-check > span { color: var(--ev-color-text-primary); }
+
+/*
+ * The summary box above the grid is taller than on other screens, so the workspace may shrink further
+ * before the footer is pushed out of view (the grid scrolls inside it).
+ */
+.workspace.disk-workspace { min-height: 180px; }
+
+/* The four-fact strip (no longer used by Journals; kept because License and Schedule use these classes). */
+.jrn-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; }
+@media (max-width: 1000px) {
+  .jrn-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Switch directory and the settings link, under the settings in the file panel. */
+.jrn-settings-actions { border-top: 0; padding-top: 8px; flex-wrap: wrap; }
+
+/* Home's Disk tile: the same 85%/95% marks as Capacity, without labels; the tile opens Capacity. */
+.stat-bar.has-ticks { position: relative; }
+.stat-bar > .disk-tick { top: 0; bottom: 0; }
+.stat--link { cursor: pointer; }
+.stat--link:hover { background: var(--ev-state-hover-bg); }
+.stat--link:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: -2px; }

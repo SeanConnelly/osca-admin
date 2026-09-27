@@ -1,57 +1,92 @@
 # Demo video script
 
-Target length: 2 minutes 30 seconds. Screen recording at 1280×800 or larger, browser zoom 100%. Use a real 2026.2 instance so every number is live.
+**Length:** 3 to 4 minutes (target 3:30).
+**Story:** three things a judge should remember.
+1. Home tells you what to *do*.
+2. Security answers "who can actually do this?".
+3. The API gap report, the file picker and `/api/osca`: this entry improves the API the contest is about.
 
-Before recording: open the portal on Home in the light theme, signed in, with a few minutes of history so the trend lines are filled.
+**Recording:** 1440×900 or larger, browser zoom 100%, light theme, signed in. Hide bookmarks and other tabs. Record each section separately and cut them together, so a mistake costs one section, not the take.
 
-## 1. Opening (0:00–0:15)
+## Before recording
 
-Show: Home.
+- Use a real 2026.2 instance, so every number is live. The Docker container from this repo is ideal: it is what judges will see, at `http://localhost:52780/portal/index.html`.
+- Leave the portal open on Home for 5 minutes first, so the sparklines are filled.
+- Make sure Home has at least two or three *Needs attention* items. A fresh container usually shows "No backup has ever run" and "System Monitor is not running". A task that failed once adds a good third item.
+- Check that `/api/osca` is installed (the file picker's **Browse…** button only appears when it is).
+- Have `docs/api-gaps.md` open in a second tab, rendered on GitHub.
+- Rehearse the Security section once: pick the service or resource whose answer is most interesting on this instance (for example a service where "anyone can connect", or a resource used by several roles plus `%All` holders).
 
-Narration: "This is OSCA Portal, a management portal for InterSystems IRIS 2026.2. Everything you see is live, and it's built only on the new SysAdmin and monitoring REST APIs."
+## Shot list
 
-## 2. Home: is the instance OK? (0:15–0:45)
+| # | Time | Screen | Action | Point to land |
+|---|---|---|---|---|
+| 1 | 0:00–0:15 | Home | Still, then a slow pointer sweep across the page | A complete management portal on the new API only |
+| 2 | 0:15–0:55 | Home | Point at the health line, the five figures, then *Needs attention*; click one item's action | Triage: every item has one action |
+| 3 | 0:55–1:10 | Any page | Press Ctrl K, type a user or database name, press Enter; point at the status bar | It works like a desktop product |
+| 4 | 1:10–2:10 | Security › Services, then Resources and Users | Open a service; read the "who can get in" answer; open a resource; follow the path to a user | "Who can actually do this?", answered in plain language |
+| 5 | 2:10–2:30 | A user or service form | Change something risky; show the review; show type-to-confirm; cancel | Every change is reviewed before it's saved |
+| 6 | 2:30–3:15 | Databases › New database (or Certificates & TLS) → **Browse…** → `docs/api-gaps.md` → API explorer | Open the file picker, browse a folder; cut to the gap report; show `/api/osca` in the API explorer | The API has no file browsing; we documented 20 gaps and filled six |
+| 7 | 3:15–3:30 | Home, dark theme | Toggle the theme; hold on Home | Close and install line |
 
-Show: point at the instance name and health pill, then the five figures, then Needs attention.
+## Narration
 
-Narration: "Home answers one question: is this instance healthy, and does anything need me? Here's System CPU for the whole machine, and next to it IRIS's own share, per core. Needs attention lists real issues. This instance has never been backed up, and each item has an action."
+### 1. Opening (0:00–0:15)
 
-Click: nothing. Hover the System CPU tile to show its tooltip.
+"This is OSCA Admin: a complete replacement for the IRIS Management Portal, built only on the new 2026.2 SysAdmin and Monitoring REST APIs. Everything you see is live."
 
-## 3. The menu and the health readout (0:45–1:05)
+### 2. Home as triage (0:15–0:55)
 
-Show: open a few menu groups, then use the toolbar readout.
+"Home answers one question: is this instance OK, and does anything need me?
 
-Narration: "The menu is ordered by how often you use each area. The group you're in stays open, and the rest stay put. The toolbar shows health on every page. Click any part of it to go to the screen behind it."
+Health at the top, five headline figures, and then *Needs attention*. Each item is something real on this instance, and each has exactly one action. No backup has ever run: open tasks. System Monitor isn't running: copy the command that starts it.
 
-Click: the "processes" part of the toolbar readout.
+Most dashboards show you charts and leave the thinking to you. This one tells you what to do next."
 
-## 4. Processes (1:05–1:35)
+Click one item's action button and let the target screen load. Then return to Home.
 
-Show: Processes.
+### 3. It works like a desktop product (0:55–1:10)
 
-Narration: "Every process, filterable and sortable. CPU now is measured over the last five seconds, not over the process's lifetime."
+"Everything is a keystroke away. Ctrl K jumps to any screen, or to any object: a user, a database, a task, a process. And the status bar keeps health, alerts and licence use on every page."
 
-Click: sort by CPU %. Type a routine name in the filter. Click a row to open the detail panel.
+Press Ctrl K, type a name, press Enter. Point at the status bar.
 
-Narration: "The panel shows who the process belongs to, what it's doing, and what you'll be able to do with it once you're signed in."
+### 4. Security: who can actually do this? (1:10–2:10)
 
-## 5. Activity, and the cost of watching (1:35–2:05)
+"Security is where most portals just show you the fields. OSCA Admin puts every security screen on one model: ways in, users, roles, resources, data.
 
-Show: Operations › Activity.
+Here's a service. Instead of a list of checkboxes, it tells me who can get in, and how: whether you have to sign in, and what someone who doesn't sign in gets on this instance.
 
-Narration: "Activity shows how hard the instance is working over the last five minutes. One thing we found: collecting these metrics costs IRIS about 55,000 global references per scrape. On a quiet instance, that's most of what you'd see, so the portal measures its own share and shows it right under the figure."
+Here's a resource. It tells me who can actually use it: everyone, through public permission; these roles; the users who hold those roles; and the accounts with `%All`. It includes access that comes in through web applications, which is the part people usually miss.
 
-Point at: a "from this portal's monitoring" note.
+That's the question an administrator actually has: not 'what's this setting', but 'who can actually do this?'"
 
-## 6. Command palette and themes (2:05–2:20)
+Open a service, pause on the "who can get in" answer. Open a resource, pause on its access list, then follow one path through to a user.
 
-Click: press Ctrl K, type "alerts", press Enter. Then toggle the theme.
+### 5. Safe changes (2:10–2:30)
 
-Narration: "Ctrl K jumps anywhere by name. Light and dark themes are both fully designed."
+"Every change shows what will change before it's saved. If a change could lock you out, or let anyone in, the portal explains the impact and asks you to type the name to confirm."
 
-## 7. Close (2:20–2:30)
+Make a risky edit, show the review and the type-to-confirm step, then cancel.
 
-Show: Home in dark theme.
+### 6. The API gap report, the file picker and `/api/osca` (2:30–3:15)
 
-Narration: "OSCA Portal. Install it with Docker or IPM. It needs IRIS 2026.2. More screens are landing through the voting period."
+"Building a complete portal on the new API showed us exactly where it falls short. Take a simple thing: choosing a file on the server. The Management Portal has had a file picker for years. The new API has no way to see the server's file system at all.
+
+So OSCA Admin adds a small read-only API of its own, `/api/osca`. It follows the same rules as IRIS's own picker: the same privileges, Filesystem access limits enforced on the server, and it never returns file contents."
+
+Click **Browse…**, open a folder or two, pick a file. Cut to the gap report.
+
+"We documented 20 gaps like this for InterSystems, each with our workaround and a suggested addition to the API. We filled six of them, including server identity, login history, the task catalogue and the console log (Logs › Messages log), and here's `/api/osca` in the portal's own API explorer, next to the system APIs."
+
+Scroll the gap report's summary table. Then open Web & APIs › API explorer and select `/api/osca`.
+
+### 7. Close (3:15–3:30)
+
+"OSCA Admin. Clone it, run `docker compose up`, and it's ready in about two minutes. It needs IRIS 2026.2."
+
+Toggle to the dark theme and hold on Home.
+
+## After recording
+
+- Upload, then put the video URL in the README (Author section) and in `docs/open-exchange-listing.md` (Links). Both are marked `TODO(owner)`.

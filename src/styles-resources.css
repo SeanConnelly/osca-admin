@@ -1,0 +1,44 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Security › Resources — only what styles.css and styles-security.css have no class for. */
+
+/* "What it protects" / "Who can use it" rows: a name, and a quiet line under it. */
+.res-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.res-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 5px var(--portal-pad); font-size: 12.5px; }
+.res-list .res-what { min-width: 0; overflow-wrap: anywhere; }
+.res-list .res-meta { flex: 0 0 auto; font-size: 12px; color: var(--portal-muted); text-align: right; }
+.res-list .mono { font-family: var(--ev-font-family-mono, monospace); font-size: 12px; }
+.res-list .chip-link { vertical-align: middle; }
+
+/* Reading-path line: who + permission chips, then how they get it, then the raw code (small, secondary). */
+.res-list li.res-line { display: block; }
+.res-line-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.res-line-main .perm-chip { margin-right: 0; }
+.res-line-sub { margin-top: 2px; font-size: 12px; color: var(--portal-muted); overflow-wrap: anywhere; }
+
+/* Hand-off to the Management Portal: numbered steps. */
+.res-steps { margin: 6px var(--portal-pad) 8px; padding-left: 18px; font-size: 12.5px; line-height: 1.5; color: var(--ev-color-text-primary); }
+.res-steps li { margin: 2px 0; }
+.detail-actions a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+
+/* Links out to the Management Portal. */
+
+/* Resource form: permission toggles in a row, explanations under them. */
+.res-perms { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+/* Permissions that mean nothing for this type are hidden; .crud-check's display would otherwise win. */
+.res-perms > [hidden], #res-perm-box[hidden] { display: none; }
+#res-public-note:empty { display: none; }
+#res-public-note { display: flex; flex-direction: column; gap: 8px; }
+#res-public-note a { color: var(--ev-color-primary); }
+.res-perm-hint { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: var(--portal-muted); }
+.res-choice { display: flex; flex-direction: column; gap: 6px; }
+.res-choice label { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.4; cursor: pointer; }
+.res-choice label span { display: flex; flex-direction: column; }
+.res-choice label small { color: var(--portal-muted); font-size: 12px; }
+.res-choice input { margin-top: 2px; accent-color: var(--ev-color-primary); }
+
+.res-lane-note { margin: 8px 0 0; font-size: 12px; color: var(--portal-muted); }
+
+/* Who-reaches-it lines sit in the panel's text column. */
+.detail > .chain-lines, .detail > .chain-line { margin: 4px 0; padding: 0 var(--portal-pad); }
+.detail > .chain-lines .res-lane-note { margin: 4px 0 0; }
+.res-public-row { padding-top: 8px; }

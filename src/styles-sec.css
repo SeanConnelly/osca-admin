@@ -1,0 +1,81 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Security screen styles: TLS / OAuth / MFT forms, OAuth list, user peek. */
+
+/* A fixed value in a form (e.g. a TLS configuration's role, which can't change after create). */
+.sec-fixed { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: 12.5px; }
+.sec-fixed > span { color: var(--ev-color-text-secondary); font-weight: 500; }
+.sec-fixed > b { font-weight: 400; color: var(--ev-color-text-primary); }
+
+/* Advanced settings behind a disclosure at the end of a form. */
+.sec-adv { margin: 4px 0 0; padding: 12px 0 0; border-top: 1px solid var(--ev-border-1); }
+.sec-adv > summary { cursor: pointer; width: fit-content; font-size: 13px; font-weight: 500; color: var(--ev-accent-11, var(--ev-accent)); border-radius: var(--ev-radius-sm, 4px); }
+.sec-adv > summary:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; }
+.sec-adv[open] > summary { margin-bottom: 12px; }
+/* A disclosure at the end of a form, on the sections' 16px content gutter (TLS ciphers, LDAP timeouts). */
+.sec-adv.sec-adv--gutter { padding: 12px var(--portal-pad, 16px) 0; }
+.sec-adv > ev-form-field + ev-form-field { margin-top: 12px; display: block; }
+
+/* Split "New ▾" header button: the menu anchors under it. */
+.sec-new-menu { display: inline-flex; align-items: center; gap: 6px; }
+.sec-new-menu ev-icon { margin-left: 2px; }
+
+/* A short list inside a form (e.g. scopes on the authorization server). */
+
+/* User peek: the concrete access chain, one line per grant. */
+.sec-access { list-style: none; margin: 0; padding: 0 var(--portal-pad, 16px) 8px; }
+.sec-access li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--ev-border-1); font-size: 13px; }
+.sec-access li:first-child { border-top: 0; }
+.sec-access .sec-res { font-family: var(--ev-font-family-mono); font-size: 12.5px; color: var(--ev-color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sec-access .sec-via { font-size: 12.5px; color: var(--ev-color-text-secondary); white-space: nowrap; }
+.sec-access .sec-via a { color: var(--ev-accent-11, var(--ev-accent)); text-decoration: none; }
+.sec-access .sec-via a:hover { text-decoration: underline; }
+.sec-access-more { margin: 0; padding: 0 var(--portal-pad, 16px) 8px; font-size: 12.5px; color: var(--ev-color-text-tertiary); }
+
+/* Services: search at the standard 300px (styles-services.css set 280). */
+.toolbar-row:has(#svc-kind) > .search-box.search-box { flex: 0 1 300px; width: 300px; }
+
+/* ── Users: list wrapper and the few pieces objectDetail() doesn't cover ── */
+.od-list#user-list-view, .od-list.sec-list { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; }
+.od-list#user-list-view[hidden], .od-list.sec-list[hidden] { display: none; }
+.sec-access .sec-perm { margin-left: 6px; font: 500 11.5px var(--ev-font-family-mono); color: var(--ev-color-text-secondary); }
+.sec-access .sec-res a { color: var(--ev-accent-11, var(--ev-accent)); text-decoration: none; }
+.sec-access .sec-res a:hover { text-decoration: underline; }
+.su-check { width: 240px; margin-left: auto; }
+#su-check-out:empty { display: none; }
+#su-check-out { padding: 4px var(--portal-pad, 16px) 8px; border-bottom: 1px solid var(--ev-border-1); }
+.su-apps { list-style: none; margin: 0; padding: 8px var(--portal-pad, 16px); display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ev-color-text-primary); }
+
+/* Services: the kind filter is a second chip group after a divider (styles-services.css sized the old select). */
+.sec-divider { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--ev-border-1); }
+ev-segmented-button#svc-kind.sec-seg { flex: 0 0 auto; width: auto; }
+
+/* A padded paragraph that opens a full-view card: objectDetail's first-paragraph margin would indent it twice. */
+/* (Any position: styles-web.css also gives every card and peek-section paragraph a 16px side margin.) */
+.od-card-body > p.chip-list-empty, .od-card-body > p.sec-access-more, .od-card-body > p.kv-text,
+.od-section > p.chip-list-empty, .od-section > p.sec-access-more, .od-section > p.kv-text { margin-left: 0; margin-right: 0; }
+
+/* A strip value that says "None": tertiary, regular weight. */
+.strip-value > span.sec-none { color: var(--ev-color-text-tertiary); font-weight: 400; }
+
+/* Users full view: recent sign-ins, a small four-column table on the card's 16px grid. */
+.sec-logins { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.sec-logins th { text-align: left; font-weight: 500; color: var(--ev-color-text-secondary); padding: 6px 8px; border-bottom: 1px solid var(--ev-border-1); white-space: nowrap; }
+.sec-logins td { padding: 5px 8px; border-top: 1px solid var(--ev-border-1); color: var(--ev-color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; font-variant-numeric: tabular-nums; }
+.sec-logins tbody tr:first-child td { border-top: 0; }
+.sec-logins th:first-child, .sec-logins td:first-child { padding-left: var(--portal-pad, 16px); }
+.sec-logins th:last-child, .sec-logins td:last-child { padding-right: var(--portal-pad, 16px); }
+.sec-logins td.mono { font-family: var(--ev-font-family-mono); color: var(--ev-color-text-secondary); }
+
+/* Users full view: rows past the first 12 wait behind "Show all N" (the grid display would override [hidden]). */
+.sec-access li[hidden] { display: none; }
+/* Role full view: a long resource list flows into two columns, so a big role doesn't leave the right half empty. */
+.sec-access.sec-access--cols { columns: 2; column-gap: 32px; }
+.sec-access.sec-access--cols li { break-inside: avoid; }
+
+/* Roles full view: the description is the subtitle's second line, under the state line (as the peek shows it at the top). */
+#page-subtitle:has(> .role-lead) { flex-wrap: wrap; row-gap: 4px; }
+#page-subtitle > .role-lead {
+  flex: 0 0 100%; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ev-color-text-secondary); font-size: 13px;
+}

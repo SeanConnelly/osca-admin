@@ -4,7 +4,7 @@
 		<Module>
 			<Name>osca-portal</Name>
 			<Version>0.1.0</Version>
-			<Description>OSCA Portal - a management portal for InterSystems IRIS built on the SysAdmin REST API (%Api.Admin) and %Api.Monitor. Serves a prebuilt single-page app at /portal. Requires IRIS 2026.2 or later.</Description>
+			<Description>OSCA Admin - a management portal for InterSystems IRIS built on the SysAdmin REST API (%Api.Admin) and %Api.Monitor. Serves a prebuilt single-page app at /portal. Requires IRIS 2026.2 or later.</Description>
 			<Keywords>management portal admin monitoring sysadmin evolution-ui</Keywords>
 			<Packaging>module</Packaging>
 			<SystemRequirements Version=">=2026.2"/>
@@ -14,10 +14,26 @@
 			<Resource Name="OscaPortal.PKG"/>
 
 			<!-- The portal signs in via the Admin API's JWT endpoints and sends a Bearer
-			     token to /api/admin and /api/monitor. 2026.2 ships JWT on for /api/admin
-			     only; this makes sure both apps accept JWT and password login, without
-			     removing any authentication method already allowed. -->
+			     token to /api/admin, /api/monitor and /api/mgmnt (REST application list
+			     and specs). 2026.2 ships JWT on for /api/admin only; this makes sure all
+			     three accept JWT and password login, without removing any authentication
+			     method already allowed. Before/after values are printed for undo. -->
 			<Invoke Class="OscaPortal.Installer" Method="EnableJWT"></Invoke>
+
+			<!-- The portal's own read-only REST API (OscaPortal.API.Dispatch) at /api/osca,
+			     in the namespace the module installs into. It copies /api/admin's
+			     authentication methods and enables JWT, so it runs after EnableJWT. -->
+			<Invoke Class="OscaPortal.Installer" Method="CreateApiApp">
+				<Arg>${namespace}</Arg>
+			</Invoke>
+
+			<!-- Prints where to open the portal: /portal/index.html. -->
+			<Invoke Class="OscaPortal.Installer" Method="Ready"></Invoke>
+
+			<!-- On uninstall, before the classes go: delete /api/osca, only if it still
+			     dispatches to OscaPortal.API.Dispatch. The other install steps are
+			     undone by hand (README, "What installing changes"). -->
+			<Invoke Class="OscaPortal.Installer" Method="Unconfigure" Phase="Unconfigure" When="Before"></Invoke>
 
 			<!--
 			  Front-end: the PREBUILT, committed dist-web/ (built with base /portal/ by
@@ -30,10 +46,14 @@
 			  64). ServeFiles=1 serves without caching, so a re-install is picked up
 			  immediately. WebApplication attributes are Security.Applications
 			  property names, passed through verbatim.
+
+			  The portal's URL is /portal/index.html. A static web application has no
+			  default page (Security.Applications has no such property), so a bare
+			  /portal/ is not served; every document and message uses the full URL.
 			-->
 			<FileCopy Name="dist-web/" InstallDirectory="${cspdir}portal/"/>
 			<WebApplication Url="/portal"
-			                Description="OSCA Portal (static single-page app)"
+			                Description="OSCA Admin (static single-page app)"
 			                Enabled="1"
 			                AutheEnabled="64"
 			                Path="${cspdir}portal/"

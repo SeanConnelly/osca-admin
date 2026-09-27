@@ -1,0 +1,69 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Security › SQL privileges and Filesystem access — only what the shared sheets have no class for. Tokens only. */
+
+/* Toolbar: namespace picker with its label. */
+.sql-ns { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--portal-muted); }
+.sql-ns ev-select { min-width: 120px; }
+#sql-sys[hidden] { display: none; }
+
+/* One grant: object (or grantee) and action chips, then where it comes from, then Revoke. */
+.sql-lines { list-style: none; margin: 0; padding: 2px 0 4px; }
+.sql-line {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; row-gap: 2px;
+  padding: 5px var(--portal-pad); font-size: 12.5px; border-bottom: 1px solid var(--ev-border-1);
+}
+.sql-line:last-child { border-bottom: 0; }
+.sql-line-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.sql-line-why { grid-column: 1; font-size: 12px; color: var(--portal-muted); overflow-wrap: anywhere; }
+.sql-line > .btn { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.sql-line > .sql-cols { grid-column: 1; }
+.sql-code { font: 11px var(--ev-font-family-mono, monospace); color: var(--portal-faint); }
+
+/* Object name that opens the object's view. */
+.sql-objlink {
+  padding: 0; border: 0; background: none; cursor: pointer; text-align: left; min-width: 0; overflow-wrap: anywhere;
+  font-size: 12px; color: var(--ev-color-text-primary);
+}
+.sql-objlink:hover { text-decoration: underline; text-underline-offset: 2px; }
+.sql-objlink:focus-visible { outline: 2px solid var(--ev-accent-9, var(--ev-color-primary)); outline-offset: 2px; border-radius: var(--ev-radius-sm, 4px); }
+.link.sql-inline { margin: 0; padding: 0; font-size: inherit; }
+
+/* Action chips: Read / Add / Change … ; changes are tinted, "+" marks the grant option. */
+.sql-acts { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.sql-act {
+  display: inline-flex; align-items: baseline; gap: 1px; padding: 0 6px; line-height: 18px; font-size: 11px; font-weight: 500;
+  color: var(--ev-color-text-primary); background: var(--ev-surface-2); border: 1px solid var(--ev-border-1); border-radius: var(--ev-radius-full, 999px);
+}
+.sql-act--change {
+  border-color: color-mix(in srgb, var(--ev-color-warning) 40%, var(--ev-border-1));
+  background: color-mix(in srgb, var(--ev-color-warning) 8%, var(--ev-surface-2));
+}
+.sql-act sup { font-size: 10px; line-height: 0; color: var(--portal-muted); }
+
+/* Column-level grants under a table line. */
+.sql-cols { font-size: 12px; color: var(--portal-muted); }
+.sql-cols-head { display: block; margin-top: 2px; }
+.sql-col-list { list-style: none; margin: 2px 0 0; padding: 0; }
+.sql-col-list li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.sql-col-list .mono { color: var(--ev-color-text-primary); font-size: 12px; }
+
+/* Grant form: action checkboxes in two columns; admin privileges grouped. */
+.sg-sub { margin: 8px 0 4px; font-size: 12px; font-weight: 600; color: var(--ev-color-text-primary); }
+.sql-act-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 12px; }
+.sql-act-field[hidden], #sg-objects[hidden], #sg-admin[hidden], #sg-cols[hidden] { display: none; }
+#sg-cols { margin-top: 8px; }
+.sg-note:empty { display: none; }
+.sg-note { margin-top: 6px; }
+.sql-adm-group { margin: 0 0 10px; padding: 0; border: 0; }
+.sql-adm-group legend { padding: 0; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--ev-color-text-primary); }
+
+/* Filesystem access: folder list, empty-state action. */
+.fs-paths { list-style: none; margin: 0; padding: 2px 0 4px; }
+.fs-paths li { display: flex; align-items: center; gap: 8px; padding: 4px var(--portal-pad); font-size: 12.5px; }
+.fs-paths li > ev-icon { flex: 0 0 auto; color: var(--portal-muted); }
+.fs-paths li > .mono { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; font-size: 12px; }
+
+/* The empty state laid over an empty grid. */
+.sql-grid-wrap > .empty-std { position: absolute; inset: 44px 0 auto; }
+
+
