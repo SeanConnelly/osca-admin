@@ -1,6 +1,6 @@
 # OSCA Admin
 
-*A modern administration portal for InterSystems IRIS, built entirely on the new IRIS 2026.2 management REST APIs.*
+*A modern administration portal for InterSystems IRIS, built on the new IRIS 2026.2 management REST APIs.*
 
 ![OSCA Admin Home](docs/screenshots/01-home.jpg)
 
