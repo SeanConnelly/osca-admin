@@ -16,3 +16,9 @@ RUN --mount=type=bind,src=.,dst=. \
     iris start IRIS && \
     iris session IRIS -U %SYS < iris.script && \
     iris stop IRIS quietly
+
+# Start IRIS directly. The base image's default start runs a post-start hook
+# (docker-entrypoint.sh iris-after-start) that fails on 2026.2 with
+# "Cannot call an iris.package wrapper ... dbapi.connect" and stops the container.
+# OSCA Admin needs nothing from that hook.
+CMD ["/iris-main"]
