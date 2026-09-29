@@ -6,9 +6,7 @@
 
 ## Demo video
 
-<div class="youtube-embed">
-<iframe src="https://www.youtube.com/embed/oaxHAelGpFo" width="640" height="360" title="OSCA Admin demo" frameborder="0" allowfullscreen></iframe>
-</div>
+[![Watch the OSCA Admin demo on YouTube](https://img.youtube.com/vi/oaxHAelGpFo/maxresdefault.jpg)](https://www.youtube.com/watch?v=oaxHAelGpFo)
 
 [Watch the demo on YouTube](https://www.youtube.com/watch?v=oaxHAelGpFo)
 
