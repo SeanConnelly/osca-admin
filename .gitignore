@@ -27,3 +27,8 @@ skills/
 
 # Demo video working files
 video/
+
+# AI assistant working files (local only)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
