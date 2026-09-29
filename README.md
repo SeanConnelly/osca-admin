@@ -4,6 +4,14 @@
 
 ![OSCA Admin Home](docs/screenshots/01-home.jpg)
 
+## Demo video
+
+<div class="youtube-embed">
+<iframe src="https://www.youtube.com/embed/oaxHAelGpFo" width="640" height="360" title="OSCA Admin demo" frameborder="0" allowfullscreen></iframe>
+</div>
+
+[Watch the demo on YouTube](https://www.youtube.com/watch?v=oaxHAelGpFo)
+
 ## About this project
 
 OSCA Admin is a **demo application** built for the InterSystems Developer Community contest **[Build Your Own Management Portal](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal)** (14 September to 4 October 2026).
@@ -39,7 +47,7 @@ After about two minutes, open **http://localhost:52780/portal/index.html** and s
 
 The container uses ports 52780 (web) and 51780 (superserver), so it won't clash with an IRIS instance you already run.
 
-**Install with IPM instead.** On IRIS or IRIS for Health **2026.2 or later**, in a terminal: `zpm "load /path/to/osca-portal"`, then open `http://<host>:<port>/portal/index.html`.
+**Install with IPM instead.** On IRIS or IRIS for Health **2026.2 or later**, clone the repository as above, then in an IRIS terminal in the namespace to install into (for example `USER`): `zpm "load /path/to/osca-admin"`, where the path is the folder you cloned. Then open `http://<host>:<port>/portal/index.html`. The app is prebuilt, so no Node or build step is needed.
 
 ## How it works
 
@@ -152,7 +160,7 @@ The installer (used by both Docker and IPM) makes three changes, and only ever *
 
 ## Author
 
-Sean Connelly. Developer Community profile: TODO(owner)-author-profile-url. Demo video: TODO(owner)-video-url.
+Sean Connelly. [Demo video on YouTube](https://www.youtube.com/watch?v=oaxHAelGpFo).
 
 ---
 

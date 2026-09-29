@@ -47,10 +47,13 @@ const runAfterId = (s: string): number | null => { const m = /Runs After #(\d+)/
 
 interface Row { task: TaskSummary; info?: TaskInfo; next: Date | null; suspended: boolean; after: TaskSummary | null }
 
-/** /task/info "Error" holds the last run's result: "Success", an error message, or "" if it never ran. */
+/**
+ * /task/info "Error" holds the last run's result: "Success", an error message, or "" if it never ran.
+ * "Task Has Expired for … Continuing from …" is the Task Manager skipping missed runs, not a failure.
+ */
 function lastResultOf(r: Row): 'ok' | 'failed' | 'running' | '' {
   const e = r.info?.Error ?? '';
-  return !e ? '' : /^success$/i.test(e) ? 'ok' : /^running$/i.test(e) ? 'running' : 'failed';
+  return !e || /^task has expired/i.test(e) ? '' : /^success$/i.test(e) ? 'ok' : /^running$/i.test(e) ? 'running' : 'failed';
 }
 
 

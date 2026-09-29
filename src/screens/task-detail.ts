@@ -126,7 +126,7 @@ export function taskPeekHtml(v: TaskView, d: TaskDetail, runs: TaskHistoryEntry[
 /** Wide cards list their rows two to a line (label beside value), as Web applications does. */
 const kv2 = (rows: Array<[string, string]>): string => odKv(rows).replace('class="od-kv"', 'class="od-kv wa-kv2"');
 /** The last result from the task's own summary, when that run is older than the kept history. */
-const priorResult = (v: TaskView): string => { const e = v.info?.Error ?? ''; return !e ? '—' : /^success$/i.test(e) ? 'Succeeded' : /^running$/i.test(e) ? 'Running' : 'Failed'; };
+const priorResult = (v: TaskView): string => { const e = v.info?.Error ?? ''; return !e || /^task has expired/i.test(e) ? '—' : /^success$/i.test(e) ? 'Succeeded' : /^running$/i.test(e) ? 'Running' : 'Failed'; };
 
 /** Full view: strip, a notice when its last run failed, then Schedule · Last runs · Last output | What it runs · When things go wrong. */
 export function taskFullView(v: TaskView, d: TaskDetail, runs: TaskHistoryEntry[], sentence: string): OdFull {
